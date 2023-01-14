@@ -23,7 +23,9 @@ logging.basicConfig(level=logging.INFO)
 
 class ChargePoint(cp):
     availability: str = "Operative"
-    connectors: list = ["Operative", "Inoperative"]
+    connectors: list = ["Operative"]
+    reserved: bool = False
+    reserved_exp = datetime.now()
 
     async def send_heartbeat(self, interval):
         request = call.HeartbeatPayload()
@@ -253,6 +255,27 @@ class ChargePoint(cp):
             # change availability chargingn station
             self.availability = operational_status
             return call_result.ChangeAvailabilityPayload(status="Accepted")
+
+    @on("ReserveNow")
+    def on_reserve_now(
+        self,
+        id: int,
+        expiry_date_time: str,
+        id_token: dict,
+        connector_type: str | None = None,
+        evse_id: int | None = None,
+        group_id_token: dict | None = None,
+        **kwargs,
+    ):
+        try:
+            if self.reserved and self.reserved_exp > datetime.now():
+                return call_result.ReserveNowPayload(status="Occupied")
+            else:
+                self.reserved = True
+                self.reserved_exp = datetime.fromisoformat(expiry_date_time)
+                return call_result.ReserveNowPayload(status="Accepted")
+        except:
+            return call_result.ReserveNowPayload(status="Rejected")
 
 
 async def main():
