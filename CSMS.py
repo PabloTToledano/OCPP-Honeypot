@@ -15,8 +15,12 @@ except ModuleNotFoundError:
 from ocpp.routing import on
 from ocpp.v201 import ChargePoint as cp
 from ocpp.v201 import call_result, call
+from log4mongo.handlers import MongoHandler
 
 logging.basicConfig(level=logging.INFO)
+handler = MongoHandler(host="mongodb://uma:tfm@localhost:27017/", capped=True)
+logger = logging.getLogger()
+logger.addHandler(handler)
 
 
 class ChargePoint(cp):
