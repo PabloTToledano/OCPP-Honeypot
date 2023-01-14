@@ -142,6 +142,18 @@ class ChargePoint(cp):
     def on_meter_values(self, status: str, request_id: int | None = None, **kwargs):
         return call_result.FirmwareStatusNotificationPayload()
 
+    @on("PublishFirmwareStatusNotification")
+    def on_publish_firmware_notification(
+        self,
+        location: str,
+        checksum: str,
+        request_id: int,
+        retries: int | None = None,
+        retry_interval: int | None = None,
+        **kwargs,
+    ):
+        return call_result.PublishFirmwareStatusNotificationPayload()
+
     async def send_data_transfer(self):
         request = call.DataTransferPayload(
             vendor_id="",
