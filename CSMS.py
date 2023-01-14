@@ -138,6 +138,10 @@ class ChargePoint(cp):
     ):
         return call_result.DataTransferPayload(status="Accepted")
 
+    @on("FirmwareStatusNotification")
+    def on_meter_values(self, status: str, request_id: int | None = None, **kwargs):
+        return call_result.FirmwareStatusNotificationPayload()
+
     async def send_data_transfer(self):
         request = call.DataTransferPayload(
             vendor_id="",

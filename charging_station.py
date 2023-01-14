@@ -306,6 +306,18 @@ class ChargePoint(cp):
     ):
         return call_result.CostUpdatedPayload()
 
+    @on("UpdateFirmware")
+    def on_update_firmware(
+        self,
+        request_id: int,
+        firmware: dict,
+        retries: int | None = None,
+        retry_interval: int | None = None,
+        **kwargs,
+    ):
+
+        return call_result.UpdateFirmwarePayload("Accepted")
+
 
 async def main():
     async with websockets.connect(
