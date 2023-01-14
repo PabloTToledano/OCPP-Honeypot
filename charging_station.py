@@ -297,6 +297,15 @@ class ChargePoint(cp):
         )
         response = await self.call(request)
 
+    @on("CostUpdated")
+    def on_cost_updated(
+        self,
+        total_cost: int,
+        transaction_id: str,
+        **kwargs,
+    ):
+        return call_result.CostUpdatedPayload()
+
 
 async def main():
     async with websockets.connect(

@@ -40,7 +40,7 @@ class ChargePoint(cp):
         return call_result.AuthorizePayload(
             id_token_info={
                 "status": "Accepted",
-                "personalMessage": "Welcome to Electrify America!",
+                "personalMessage": "0.69$/kWh",
             },
         )
 
@@ -50,7 +50,7 @@ class ChargePoint(cp):
             current_time=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S") + "Z"
         )
 
-    @on("StatusNt ification")
+    @on("StatusNotification")
     def on_status_notification(
         self,
         timestamp: str,
