@@ -160,6 +160,13 @@ class ChargePoint(cp):
     def on_meter_values(self, evse_id: int, meter_value: list, **kwargs):
         return call_result.MeterValuesPayload()
 
+    @on("ClearedChargingLimit")
+    def on_cleared_charging_limit(
+        self, charging_limit_source: str, evse_id: int | None = None, **kwargs
+    ):
+
+        return call_result.ClearedChargingLimitPayload()
+
     async def send_data_transfer(self):
         request = call.DataTransferPayload(
             vendor_id="",
