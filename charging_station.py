@@ -200,6 +200,36 @@ class ChargePoint(cp):
         request = call.LogStatusNotificationPayload(status="Uploaded", request_id=1)
         response = await self.call(request)
 
+    @on("CustomerInformation")
+    def on_customer_information(
+        self,
+        request_id: int,
+        report: bool,
+        clear: bool,
+        customer_certificate: dict | None = None,
+        id_token: dict | None = None,
+        customer_identifier: str | None = None,
+        **kwargs,
+    ):
+        if clear:
+            # N10 - Clear Customer Information
+            pass
+        elif report:
+            # N09 - Get Customer Information
+            # TODO create list of fake customer data
+            return call_result.CustomerInformationPayload(status="Accepted")
+
+    @after("CustomerInformation")
+    async def after_customer_information(self, **kwargs):
+        request = call.NotifyCustomerInformationPayload(
+            data="userdata",
+            seq_no=0,
+            generated_at=datetime.utcnow().isoformat(),
+            request_id=0,
+            tbc=False,
+        )
+        response = await self.call(request)
+
 
 async def main():
     async with websockets.connect(

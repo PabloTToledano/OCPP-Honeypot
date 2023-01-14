@@ -77,6 +77,18 @@ class ChargePoint(cp):
         # el atacante puede hacer creer que una charging station tiene muchos errores,etc.
         return call_result.NotifyEventPayload()
 
+    @on("NotifyCustomerInformation")
+    def on_notify_customer_information(
+        self,
+        data: str,
+        seq_no: int,
+        generated_at: str,
+        request_id: int,
+        tbc: bool | None = None,
+        **kwargs,
+    ):
+        return call_result.NotifyCustomerInformationPayload()
+
     async def send_data_transfer(self):
         request = call.DataTransferPayload(
             vendor_id="",
