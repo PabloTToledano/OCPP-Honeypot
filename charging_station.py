@@ -23,9 +23,9 @@ logging.basicConfig(level=logging.INFO)
 
 class ChargePoint(cp):
     availability: str = "Operative"
-    connectors: list = ["Operative"]
-    reserved: bool = False
-    reserved_exp = datetime.now()
+    connectors: list = ["Operative", "Operative"]
+    reserved: list = [False, False]
+    reserved_exp: list = [datetime.now(), datetime.now()]
 
     async def send_heartbeat(self, interval):
         request = call.HeartbeatPayload()
@@ -276,6 +276,26 @@ class ChargePoint(cp):
                 return call_result.ReserveNowPayload(status="Accepted")
         except:
             return call_result.ReserveNowPayload(status="Rejected")
+
+    @on("CancelReservation")
+    def on_cancel_reservation(
+        self,
+        reservation_id: int,
+        **kwargs,
+    ):
+        # free charging station
+        self.reserved = False
+        return call_result.CancelReservationPayload(status="Accepted")
+
+    @after("CancelReservation")
+    async def after_cancel_reservation(self, **kwargs):
+        request = call.StatusNotificationPayload(
+            timestamp=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S") + "Z",
+            connector_status="Available",
+            evse_id=0,
+            connector_id=0,
+        )
+        response = await self.call(request)
 
 
 async def main():
