@@ -101,6 +101,10 @@ class ChargePoint(cp):
     ):
         return call_result.NotifyCustomerInformationPayload()
 
+    @on("MeterValues")
+    def on_meter_values(self, evse_id: int, meter_value: list, **kwargs):
+        return call_result.MeterValuesPayload()
+
     async def send_data_transfer(self):
         request = call.DataTransferPayload(
             vendor_id="",
