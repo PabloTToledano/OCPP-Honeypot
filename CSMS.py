@@ -167,6 +167,28 @@ class ChargePoint(cp):
 
         return call_result.ClearedChargingLimitPayload()
 
+    @on("TransactionEvent")
+    def on_transaction_event(
+        self,
+        event_type: str,
+        timestamp: str,
+        trigger_reason: str,
+        seq_no: int,
+        transaction_info: dict,
+        meter_value: list | None = None,
+        offline: bool | None = None,
+        number_of_phases_used: int | None = None,
+        cable_max_current: int | None = None,
+        reservation_id: int | None = None,
+        evse: dict | None = None,
+        id_token: dict | None = None,
+        **kwargs,
+    ):
+        # total_cost: int | None = None, charging_priority: int | None = None,
+        # id_token_info: Dict | None = None, updated_personal_message: Dict | None = None
+
+        return call_result.TransactionEventPayload()
+
     async def send_data_transfer(self):
         request = call.DataTransferPayload(
             vendor_id="",
