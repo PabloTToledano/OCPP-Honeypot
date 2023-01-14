@@ -25,7 +25,9 @@ class ChargePoint(cp):
         print(charging_station)
         print(reason)
         return call_result.BootNotificationPayload(
-            current_time=datetime.utcnow().isoformat(), interval=600, status="Accepted"
+            current_time=datetime.utcnow().isoformat(),
+            interval=6000000,
+            status="Accepted",
         )
 
     @on("Authorize")
@@ -40,7 +42,7 @@ class ChargePoint(cp):
         return call_result.AuthorizePayload(
             id_token_info={
                 "status": "Accepted",
-                "personalMessage": "0.69$/kWh",
+                "personalMessage": {"format": "UTF8", "content": "0.69$/kWh"},
             },
         )
 
@@ -89,6 +91,16 @@ class ChargePoint(cp):
         # un error es G05 - Lock Failure
         return call_result.NotifyEventPayload()
 
+    @on("NotifyChargingLimit")
+    def on_notify_charging_limit(
+        self,
+        charging_limit: dict,
+        charging_schedule: list | None = None,
+        evse_id: int | None = None,
+        **kwargs,
+    ):
+        return call_result.NotifyChargingLimitPayload()
+
     @on("NotifyCustomerInformation")
     def on_notify_customer_information(
         self,
@@ -101,9 +113,30 @@ class ChargePoint(cp):
     ):
         return call_result.NotifyCustomerInformationPayload()
 
+    @on("NotifyEVChargingSchedule")
+    def on_notify_ev_charging_schedule(
+        self,
+        time_base: str,
+        charging_schedule: dict,
+        evse_id: int,
+        **kwargs,
+    ):
+
+        return call_result.NotifyEVChargingSchedulePayload(status="Accepted")
+
     @on("MeterValues")
     def on_meter_values(self, evse_id: int, meter_value: list, **kwargs):
         return call_result.MeterValuesPayload()
+
+    @on("DataTransfer")
+    def on_data_transfer(
+        self,
+        vendor_id: str,
+        message_id: str | None = None,
+        data: str | None = None,
+        **kwargs,
+    ):
+        return call_result.DataTransferPayload(status="Accepted")
 
     async def send_data_transfer(self):
         request = call.DataTransferPayload(
