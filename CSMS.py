@@ -139,7 +139,9 @@ class ChargePoint(cp):
         return call_result.DataTransferPayload(status="Accepted")
 
     @on("FirmwareStatusNotification")
-    def on_meter_values(self, status: str, request_id: int | None = None, **kwargs):
+    def on_firmware_status_notification(
+        self, status: str, request_id: int | None = None, **kwargs
+    ):
         return call_result.FirmwareStatusNotificationPayload()
 
     @on("PublishFirmwareStatusNotification")
@@ -153,6 +155,10 @@ class ChargePoint(cp):
         **kwargs,
     ):
         return call_result.PublishFirmwareStatusNotificationPayload()
+
+    @on("MeterValues")
+    def on_meter_values(self, evse_id: int, meter_value: list, **kwargs):
+        return call_result.MeterValuesPayload()
 
     async def send_data_transfer(self):
         request = call.DataTransferPayload(
