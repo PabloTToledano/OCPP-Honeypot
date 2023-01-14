@@ -34,7 +34,7 @@ class ChargePoint(cp):
         id_token: dict,
         certificate: str | None = None,
         iso15118_certificate_hash_data: list | None = None,
-        **kwargs
+        **kwargs,
     ):
         # Must accept everything so that the attacker believes he/she has access
         return call_result.AuthorizePayload(
@@ -61,9 +61,21 @@ class ChargePoint(cp):
         request_id: int,
         message_info: list | None = None,
         tbc: bool | None = None,
-        **kwargs
+        **kwargs,
     ):
         return call_result.LogStatusNotificationPayload()
+
+    @on("NotifyEvent")
+    def on_notify_event(
+        self,
+        generated_at: str,
+        seq_no: int,
+        event_data: list,
+        tbc: bool | None = None,
+        **kwargs,
+    ):
+        # el atacante puede hacer creer que una charging station tiene muchos errores,etc.
+        return call_result.NotifyEventPayload()
 
     async def send_data_transfer(self):
         request = call.DataTransferPayload(
