@@ -46,10 +46,21 @@ class ChargePoint(cp):
 
     @on("Heartbeat")
     def on_heartbeat(self, **kwargs):
-        # print("Got a Heartbeat!")
         return call_result.HeartbeatPayload(
             current_time=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S") + "Z"
         )
+
+    @on("StatusNt ification")
+    def on_status_notification(
+        self,
+        timestamp: str,
+        connector_status: str,
+        evse_id: int,
+        connector_id: int,
+        **kwargs,
+    ):
+        #  A connector status changed, the Charging Station sends a StatusNotificationRequest to the CSMS to inform the CSMS about the new status.
+        return call_result.StatusNotificationPayload()
 
     @on("NotifyDisplayMessages")
     def on_notify_display_messages(self, **kwargs):
@@ -75,6 +86,7 @@ class ChargePoint(cp):
         **kwargs,
     ):
         # el atacante puede hacer creer que una charging station tiene muchos errores,etc.
+        # un error es G05 - Lock Failure
         return call_result.NotifyEventPayload()
 
     @on("NotifyCustomerInformation")

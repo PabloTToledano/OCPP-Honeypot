@@ -22,6 +22,9 @@ logging.basicConfig(level=logging.INFO)
 
 
 class ChargePoint(cp):
+    availability: str = "Operative"
+    connectors: list = ["Operative", "Inoperative"]
+
     async def send_heartbeat(self, interval):
         request = call.HeartbeatPayload()
         while True:
@@ -217,18 +220,39 @@ class ChargePoint(cp):
         elif report:
             # N09 - Get Customer Information
             # TODO create list of fake customer data
-            return call_result.CustomerInformationPayload(status="Accepted")
+            pass
+        return call_result.CustomerInformationPayload(status="Accepted")
 
     @after("CustomerInformation")
     async def after_customer_information(self, **kwargs):
         request = call.NotifyCustomerInformationPayload(
             data="userdata",
             seq_no=0,
-            generated_at=datetime.utcnow().isoformat(),
+            generated_at=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S") + "Z",
             request_id=0,
             tbc=False,
         )
         response = await self.call(request)
+
+    @on("ChangeAvailability")
+    def on_change_availability(
+        self, operational_status: str, evse: dict | None = None, **kwargs
+    ):
+        if operational_status not in ["Inoperative", "Operative"]:
+            return call_result.ChangeAvailabilityPayload(status="Rejected")
+        if evse:
+            # change availability of that connector
+            if evse.get("connectorId") and evse.get("connectorId") < len(
+                self.connectors
+            ):
+                self.connectors[evse.get("connectorId")] = operational_status
+                return call_result.ChangeAvailabilityPayload(status="Accepted")
+            else:
+                return call_result.ChangeAvailabilityPayload(status="Rejected")
+        else:
+            # change availability chargingn station
+            self.availability = operational_status
+            return call_result.ChangeAvailabilityPayload(status="Accepted")
 
 
 async def main():
