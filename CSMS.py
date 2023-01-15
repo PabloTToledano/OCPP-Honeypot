@@ -1,13 +1,16 @@
 import asyncio
 import logging
 import random
+import argparse
+import ssl
+import os
+import pathlib
 from datetime import datetime
 
 try:
     import websockets
 except ModuleNotFoundError:
-    print("This honeypot on the 'websockets' and ocpp package.")
-    print("Please install it by running: ")
+    print("This honeypot uses the 'websockets' and ocpp package.")
     import sys
 
     sys.exit(1)
@@ -18,9 +21,6 @@ from ocpp.v201 import call_result, call
 from log4mongo.handlers import MongoHandler
 
 logging.basicConfig(level=logging.INFO)
-handler = MongoHandler(host="mongodb://uma:tfm@localhost:27017/", capped=True)
-logger = logging.getLogger()
-logger.addHandler(handler)
 
 
 class ChargePoint(cp):
@@ -289,10 +289,16 @@ async def on_connect(websocket, path):
     await charge_point.start()
 
 
-async def main():
-    server = await websockets.serve(
-        on_connect, "0.0.0.0", 9000, subprotocols=["ocpp2.0.1"]
-    )
+async def main(address: str, port: int, ssl_context: ssl.SSLContext | None = None):
+
+    if ssl_context:
+        server = await websockets.serve(
+            on_connect, address, port, subprotocols=["ocpp2.0.1"], ssl=ssl_context
+        )
+    else:
+        server = await websockets.serve(
+            on_connect, address, port, subprotocols=["ocpp2.0.1"]
+        )
 
     logging.info("Server Started listening to new connections...")
     await server.wait_closed()
@@ -300,4 +306,51 @@ async def main():
 
 if __name__ == "__main__":
     # asyncio.run() is used when running this example with Python >= 3.7v
-    asyncio.run(main())
+
+    parser = argparse.ArgumentParser(description="CSMS OCPP Honeypot")
+    parser.add_argument(
+        "-a",
+        "--address",
+        type=str,
+        default="0.0.0.0",
+        required=False,
+        help="IP Address websocket",
+    )
+    parser.add_argument(
+        "-p", "--port", type=int, default=9000, required=False, help="Websocket port"
+    )
+    parser.add_argument("-s", "--secure", action="store_true", help="Run over TLS")
+    parser.add_argument(
+        "-c",
+        "--cert",
+        type=str,
+        default="",
+        required=False,
+        help="Path to a pem certificate",
+    )
+    parser.add_argument(
+        "-k",
+        "--key",
+        type=str,
+        default="",
+        required=False,
+        help="Path to a key certificate",
+    )
+
+    args = parser.parse_args()
+
+    # handler = MongoHandler(host="mongodb://uma:tfm@localhost:27017/", capped=True)
+    # logger = logging.getLogger("ocpp")
+    # logger.addHandler(handler)
+    if args.secure and args.cert != "":
+        if not os.path.isfile(args.cert):
+            print(f"{args.cert} is not a valid pem file")
+            exit
+        if not os.path.isfile(args.key):
+            print(f"{args.key} is not a valid key file")
+            exit
+
+        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ssl_context.load_cert_chain(args.cert, args.key)
+        asyncio.run(main(args.address, args.port, ssl_context))
+    asyncio.run(main(args.address, args.port))
