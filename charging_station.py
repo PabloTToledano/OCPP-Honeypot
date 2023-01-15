@@ -36,16 +36,18 @@ class ChargePoint(cp):
     async def send_boot_notification(self):
         request = call.BootNotificationPayload(
             charging_station={
-                "model": "Electrify America Ultra-Fast",
+                "model": "EA Fast",
                 "vendor_name": "Signet",
             },
             reason="PowerUp",
         )
-        response = await self.call(request)
-
-        if response.status == "Accepted":
-            print("Connected to central system.")
-            await self.send_heartbeat(response.interval)
+        try:
+            response = await self.call(request)
+            if response.status == "Accepted":
+                print("Connected to central system.")
+                await self.send_heartbeat(response.interval)
+        except Exception as e:
+            logging.error(e)
 
     async def send_authorize(
         self,
@@ -320,11 +322,13 @@ class ChargePoint(cp):
 
 
 async def main():
+    # ws://localhost:8081/OCPP/
+    # ws://localhost:9000/CP_2
     async with websockets.connect(
-        "ws://localhost:9000/CP_2", subprotocols=["ocpp2.0.1", "ocpp2.0.1j"]
+        "ws://localhost:8081/OCPP/", subprotocols=["ocpp2.0.1", "ocpp2.0"]
     ) as ws:
 
-        charge_point = ChargePoint("CP_2", ws)
+        charge_point = ChargePoint("OCPP", ws)
         await asyncio.gather(
             charge_point.start(), charge_point.send_boot_notification()
         )
