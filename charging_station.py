@@ -1,6 +1,8 @@
 import asyncio
 import logging
 import random
+import vt
+import os
 from datetime import datetime
 from variables import OCPPVariables
 
@@ -20,6 +22,7 @@ from ocpp.v201 import ChargePoint as cp
 from ocpp.v201 import call, call_result
 
 logging.basicConfig(level=logging.INFO)
+LOGGER = logging.getLogger("ocpp")
 
 
 class ChargePoint(cp):
@@ -28,6 +31,9 @@ class ChargePoint(cp):
     reserved: list = [False, False]
     reserved_exp: list = [datetime.now(), datetime.now()]
     occp_variables = OCPPVariables()
+    vt_client = None
+    if os.getenv("VT_API_KEY"):
+        vt_client = vt.Client(os.getenv("VT_API_KEY"))
 
     async def send_heartbeat(self, interval):
         request = call.HeartbeatPayload()
@@ -338,7 +344,15 @@ class ChargePoint(cp):
         retry_interval: int | None = None,
         **kwargs,
     ):
-
+        # send firmware uri to virustotal for analysis
+        if self.vt_client:
+            try:
+                url_id = vt.url_id(firmware.get("location"))
+                url = self.client.get_object("/urls/{}", url_id)
+                LOGGER.info(f"VirusTotal analysis: {url.last_analysis_stats}")
+            except Exception as e:
+                # usually due to invalid virustotal api key
+                pass
         return call_result.UpdateFirmwarePayload("Accepted")
 
 
