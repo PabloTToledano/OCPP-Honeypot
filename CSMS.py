@@ -193,6 +193,12 @@ class ChargePoint(cp):
 
         return call_result.TransactionEventPayload()
 
+    @on("SecurityEventNotification")
+    def on_security_event_notification(
+        self, type: str, timestamp: str, tech_info: str | None = None, **kwargs
+    ):
+        return call_result.SecurityEventNotificationPayload()
+
     async def send_data_transfer(self):
         request = call.DataTransferPayload(
             vendor_id="",
