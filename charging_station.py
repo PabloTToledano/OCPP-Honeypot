@@ -2,6 +2,7 @@ import asyncio
 import logging
 import random
 from datetime import datetime
+from variables import OCPPVariables
 
 try:
     import websockets
@@ -26,7 +27,7 @@ class ChargePoint(cp):
     connectors: list = ["Operative", "Operative"]
     reserved: list = [False, False]
     reserved_exp: list = [datetime.now(), datetime.now()]
-    variables: dict = {"BasicAuthPassword": "password"}
+    occp_variables = OCPPVariables()
 
     async def send_heartbeat(self, interval):
         request = call.HeartbeatPayload()
@@ -83,8 +84,8 @@ class ChargePoint(cp):
             # Do something with variable.get("attributeValue")
 
             # A01 - Update Charging Station Password for HTTP Basic Authentication
-            if self.variables.get(variable.get("variable"), None):
-                self.variables[variable.get("variable")] = variable.get(
+            if self.occp_variables.variables.get(variable.get("variable"), None):
+                self.occp_variables.variables[variable.get("variable")] = variable.get(
                     "attributeValue", ""
                 )
 
@@ -113,7 +114,9 @@ class ChargePoint(cp):
                     "attributeStatus": "Accepted",
                     "component": variable.get("component"),
                     "variable": variable.get("variable"),
-                    "attributeValue ": self.variables.get(variable.get("variable"), ""),
+                    "attributeValue ": self.occp_variables.variables.get(
+                        variable.get("variable"), ""
+                    ),
                 }
             )
         return call_result.GetVariablesPayload(get_variable_result=variable_result)
