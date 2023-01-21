@@ -384,6 +384,16 @@ class ChargePoint(cp):
 
         return call_result.RequestStartTransactionPayload(status="Accepted")
 
+    @on("SetChargingProfile")
+    def on_set_charging_profile(
+        self,
+        evse_id: int,
+        charging_profile: dict,
+        **kwargs,
+    ):
+
+        return call_result.SetChargingProfilePayload(status="Accepted")
+
 
 async def main():
     # ws://localhost:8081/OCPP/
