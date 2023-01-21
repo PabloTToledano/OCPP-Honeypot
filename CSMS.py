@@ -4,6 +4,8 @@ import random
 import argparse
 import ssl
 import os
+import io
+import vt
 import pathlib
 from datetime import datetime
 
@@ -24,6 +26,10 @@ logging.basicConfig(level=logging.INFO)
 
 
 class ChargePoint(cp):
+    vt_client = None
+    if os.getenv("VT_API_KEY"):
+        vt_client = vt.Client(os.getenv("VT_API_KEY"))
+
     @on("BootNotification")
     def on_boot_notification(self, charging_station, reason, **kwargs):
         print(charging_station)
@@ -140,7 +146,18 @@ class ChargePoint(cp):
         data: str | None = None,
         **kwargs,
     ):
-        return call_result.DataTransferPayload(status="Accepted")
+        # scand data with virustotal
+        call.DataTransferPayload()
+        if self.vt_client:
+            try:
+                data = io.StringIO(data)
+                analysis = self.client.scan_file(data, wait_for_completion=True)
+                LOGGER.info(f"VirusTotal analysis: {analysis.stats}")
+            except Exception as e:
+                # usually due to invalid virustotal api key
+                pass
+
+        return call_result.DataTransferPayload(status="Accepted", data={})
 
     @on("FirmwareStatusNotification")
     def on_firmware_status_notification(

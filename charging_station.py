@@ -3,6 +3,7 @@ import logging
 import random
 import vt
 import os
+import io
 from datetime import datetime
 from variables import OCPPVariables
 
@@ -139,8 +140,23 @@ class ChargePoint(cp):
         return call_result.GetVariablesPayload(get_variable_result=variable_result)
 
     @on("DataTransfer")
-    def on_data_transfer(self, **kwargs):
-        # TODO save the data
+    def on_data_transfer(
+        self,
+        vendor_id: str,
+        message_id: str | None = None,
+        data: str | None = None,
+        **kwargs,
+    ):
+        # scand data with virustotal
+        if self.vt_client:
+            try:
+                data = io.StringIO(data)
+                analysis = self.client.scan_file(data, wait_for_completion=True)
+                LOGGER.info(f"VirusTotal analysis: {analysis.stats}")
+            except Exception as e:
+                # usually due to invalid virustotal api key
+                pass
+
         return call_result.DataTransferPayload(status="", data={})
 
     @on("SetNetworkProfile")
