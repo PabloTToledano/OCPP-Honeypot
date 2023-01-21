@@ -371,6 +371,19 @@ class ChargePoint(cp):
                 pass
         return call_result.UpdateFirmwarePayload("Accepted")
 
+    @on("RequestStartTransaction")
+    def on_request_start_transaction(
+        self,
+        id_token: dict,
+        remote_start_id: int,
+        evse_id: int | None = None,
+        group_id_token: dict | None = None,
+        charging_profile: dict | None = None,
+        **kwargs,
+    ):
+
+        return call_result.RequestStartTransactionPayload(status="Accepted")
+
 
 async def main():
     # ws://localhost:8081/OCPP/
