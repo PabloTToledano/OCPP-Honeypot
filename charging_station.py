@@ -83,20 +83,31 @@ class ChargePoint(cp):
         for variable in set_variable_data:
             # Do something with variable.get("attributeValue")
 
-            # A01 - Update Charging Station Password for HTTP Basic Authentication
             if self.occp_variables.variables.get(variable.get("variable"), None):
                 self.occp_variables.variables[variable.get("variable")] = variable.get(
                     "attributeValue", ""
                 )
 
-            variable_result.append(
-                {
-                    "attributeType": variable.get("attributeType", "Actual"),
-                    "attributeStatus": "Accepted",
-                    "component": variable.get("component"),
-                    "variable": variable.get("variable"),
-                }
-            )
+            match variable.get("variable"):
+                # A05 - Upgrade Charging Station Security Profile
+                case "NetworkConfigurationPriority":
+                    variable_result.append(
+                        {
+                            "attributeType": variable.get("attributeType", "Actual"),
+                            "attributeStatus": "Accepted",
+                            "component": variable.get("component"),
+                            "variable": variable.get("variable"),
+                        }
+                    )
+                case default:
+                    variable_result.append(
+                        {
+                            "attributeType": variable.get("attributeType", "Actual"),
+                            "attributeStatus": "Accepted",
+                            "component": variable.get("component"),
+                            "variable": variable.get("variable"),
+                        }
+                    )
         return call_result.SetVariablesPayload(set_variable_result=variable_result)
 
     @on("GetVariables")
