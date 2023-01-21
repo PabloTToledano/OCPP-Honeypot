@@ -30,7 +30,7 @@ class ChargePoint(cp):
         print(reason)
         return call_result.BootNotificationPayload(
             current_time=datetime.utcnow().isoformat(),
-            interval=6000000,
+            interval=10,
             status="Accepted",
         )
 
