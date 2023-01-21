@@ -26,6 +26,7 @@ class ChargePoint(cp):
     connectors: list = ["Operative", "Operative"]
     reserved: list = [False, False]
     reserved_exp: list = [datetime.now(), datetime.now()]
+    variables: dict = {"BasicAuthPassword": "password"}
 
     async def send_heartbeat(self, interval):
         request = call.HeartbeatPayload()
@@ -80,6 +81,13 @@ class ChargePoint(cp):
         variable_result = []
         for variable in set_variable_data:
             # Do something with variable.get("attributeValue")
+
+            # A01 - Update Charging Station Password for HTTP Basic Authentication
+            if self.variables.get(variable.get("variable"), None):
+                self.variables[variable.get("variable")] = variable.get(
+                    "attributeValue", ""
+                )
+
             variable_result.append(
                 {
                     "attributeType": variable.get("attributeType", "Actual"),
@@ -99,14 +107,13 @@ class ChargePoint(cp):
         # if status rejected then attibuteValue empty
         variable_result = []
         for variable in get_variable_data:
-            # Do something with variable.get("attributeValue")
             variable_result.append(
                 {
                     "attributeType": variable.get("attributeType", "Actual"),
                     "attributeStatus": "Accepted",
                     "component": variable.get("component"),
                     "variable": variable.get("variable"),
-                    "attributeValue ": "",
+                    "attributeValue ": self.variables.get(variable.get("variable"), ""),
                 }
             )
         return call_result.GetVariablesPayload(get_variable_result=variable_result)
