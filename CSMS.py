@@ -20,7 +20,7 @@ except ModuleNotFoundError:
 from ocpp.routing import on
 from ocpp.v201 import ChargePoint as cp
 from ocpp.v201 import call_result, call
-from log4mongo.handlers import MongoHandler
+
 
 logging.basicConfig(level=logging.INFO)
 
@@ -367,10 +367,10 @@ if __name__ == "__main__":
     # logger.addHandler(handler)
     if args.secure and args.cert != "":
         if not os.path.isfile(args.cert):
-            print(f"{args.cert} is not a valid pem file")
+            print(f"{args.cert} is not a file")
             exit
         if not os.path.isfile(args.key):
-            print(f"{args.key} is not a valid key file")
+            print(f"{args.key} is not a file")
             exit
 
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
