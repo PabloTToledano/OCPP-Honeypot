@@ -412,10 +412,11 @@ async def main():
     print("[Charging Point]Using config:")
     print(config)
 
-    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-    localhost_pem = pathlib.Path(__file__).with_name("localhost.pem")
-    ssl_context.load_verify_locations(localhost_pem)
-    ssl=ssl_context
+    # ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    # localhost_pem = pathlib.Path(__file__).with_name("localhost.pem")
+    # ssl_context.load_verify_locations(localhost_pem)
+    # ssl=ssl_context
+    ssl_context = None
 
     # if ssl_context = True then it accepts valid ssl certificates elsewhere a CA cert is needed
 
@@ -431,8 +432,9 @@ async def main():
                 )
         else:
             # No SSL
+            id = "CP-1"
             async with websockets.connect(
-            config.get("CSMS"), subprotocols=["ocpp2.0.1", "ocpp2.0"], 
+            config.get("CSMS")+id, subprotocols=["ocpp2.0.1", "ocpp2.0"], 
         ) as ws:
 
                 charge_point = ChargePoint("OCPP", ws, 30, config)

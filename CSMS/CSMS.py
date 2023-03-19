@@ -6,6 +6,7 @@ import ssl
 import os
 import io
 import vt
+import json
 import pathlib
 from datetime import datetime
 
@@ -328,48 +329,25 @@ async def main(address: str, port: int, ssl_context: ssl.SSLContext | None = Non
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="CSMS OCPP Honeypot")
-    parser.add_argument(
-        "-a",
-        "--address",
-        type=str,
-        default="0.0.0.0",
-        required=False,
-        help="IP Address websocket",
-    )
-    parser.add_argument(
-        "-p", "--port", type=int, default=9000, required=False, help="Websocket port"
-    )
-    parser.add_argument("-s", "--secure", action="store_true", help="Run over TLS")
-    parser.add_argument(
-        "-c",
-        "--cert",
-        type=str,
-        default="",
-        required=False,
-        help="Path to a pem certificate",
-    )
-    parser.add_argument(
-        "-k",
-        "--key",
-        type=str,
-        default="",
-        required=False,
-        help="Path to a key certificate",
-    )
 
-    args = parser.parse_args()
+    #load config json
+    with open("/config.json") as file:
+        config = json.load(file)
 
+    logging.info("[CSMS]Using config:")
+    logging.info(config)
 
-    if args.secure and args.cert != "":
-        if not os.path.isfile(args.cert):
-            print(f"{args.cert} is not a file")
-            exit
-        if not os.path.isfile(args.key):
-            print(f"{args.key} is not a file")
-            exit
+    if not os.path.isfile(config.get("ssl_key")) or not os.path.isfile(config.get("ssl_pem")):
+        # Security profile 1
+        # TODO check CP password
+        logging.info("Security profile 1")
+        asyncio.run(main(config.get("IP","0.0.0.0"), config.get("port","9000")))
 
+    else:
+        # Security profile 2/3
+        logging.info("Security profile 2/3")
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        ssl_context.load_cert_chain(args.cert, args.key)
-        asyncio.run(main(args.address, args.port, ssl_context))
-    asyncio.run(main(args.address, args.port))
+        ssl_context.load_cert_chain(config.get("ssl_pem"), config.get("ssl_key"))
+        # Start main function
+        asyncio.run(main(config.get("IP","0.0.0.0"), config.get("port","9000"), ssl_context))
+    
