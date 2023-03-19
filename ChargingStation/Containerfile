@@ -1,0 +1,18 @@
+FROM python:3.11.2-alpine3.17
+RUN apk add --update git
+
+# Download custom OCPP lib
+RUN wget https://github.com/PabloTToledano/ocpp/releases/download/v0.17.0/ocpp-0.17.0-py3-none-any.whl
+RUN pip install ocpp-0.17.0-py3-none-any.whl
+
+
+COPY ./charging_station.py /charging_station.py
+COPY ./variables.py /variables.py
+COPY ./requirements.txt /requirements.txt
+
+RUN pip install -r /requirements.txt
+
+ENV VT_API_KEY="YOUR VP KEY HERE"
+
+
+CMD ["python","/charging_station.py"]
