@@ -4,8 +4,9 @@ import random
 import vt
 import os
 import io
+import json
+import websockets
 from datetime import datetime
-from variables import OCPPVariables
 
 from ocpp.routing import on, after
 from ocpp.v201 import ChargePoint as cp
@@ -16,14 +17,31 @@ LOGGER = logging.getLogger("ocpp")
 
 
 class ChargePoint(cp):
-    availability: str = "Operative"
-    connectors: list = ["Operative", "Operative"]
-    reserved: list = [False, False]
-    reserved_exp: list = [datetime.now(), datetime.now()]
-    occp_variables = OCPPVariables()
-    vt_client = None
-    if os.getenv("VT_API_KEY"):
-        vt_client = vt.Client(os.getenv("VT_API_KEY"))
+
+    def __init__(self,id, connection, response_timeout, config):
+        cp.__init__(self,id,connection,response_timeout)    
+        self.availability: str = "Operative"
+        self.model = config.get("model","UMA")
+        self.vendor = config.get("vendor_name","Andalucia")
+        self.connectors,self.reserved,self.reserved_exp = self.generate_connectors(config)
+        self.occp_variables = config.get("OCPP_variables",{})
+        self.vt_client = None
+        # Only create virus total client if token is found
+        if config.get("VT_API_KEY","") != "":
+            vt_client = vt.Client(config.get("VT_API_KEY"))
+
+
+    def generate_connectors(self,config):
+        n_connectors = config.get("connectors",1)
+        connectors = []
+        reserved = []
+        reserved_exp = []
+        for i in range(n_connectors):
+            connectors.append("Operative")
+            reserved.append(False)
+            reserved_exp.append(datetime.now())
+        return connectors,reserved,reserved_exp
+
 
     async def send_heartbeat(self, interval):
         request = call.HeartbeatPayload()
@@ -34,8 +52,8 @@ class ChargePoint(cp):
     async def send_boot_notification(self):
         request = call.BootNotificationPayload(
             charging_station={
-                "model": "EA Fast",
-                "vendor_name": "Signet",
+                "model": self.model,
+                "vendor_name": self.vendor,
             },
             reason="PowerUp",
         )
@@ -79,8 +97,8 @@ class ChargePoint(cp):
         for variable in set_variable_data:
             # Do something with variable.get("attributeValue")
 
-            if self.occp_variables.variables.get(variable.get("variable"), None):
-                self.occp_variables.variables[variable.get("variable")] = variable.get(
+            if self.occp_variables.get(variable.get("variable"), None):
+                self.occp_variables[variable.get("variable")] = variable.get(
                     "attributeValue", ""
                 )
 
@@ -121,7 +139,7 @@ class ChargePoint(cp):
                     "attributeStatus": "Accepted",
                     "component": variable.get("component"),
                     "variable": variable.get("variable"),
-                    "attributeValue ": self.occp_variables.variables.get(
+                    "attributeValue ": self.occp_variables.get(
                         variable.get("variable"), ""
                     ),
                 }
@@ -178,8 +196,7 @@ class ChargePoint(cp):
 
     @on("GetLocalListVersion")
     def on_get_locallist_version(self, **kwargs):
-        # TODO retrieve versionNumber
-        return call_result.GetLocalListVersionPayload(version_number=1)
+        return call_result.GetLocalListVersionPayload(version_number=2)
 
     # O.DisplayMessage
     @on("SetDisplayMessages")
@@ -387,14 +404,45 @@ class ChargePoint(cp):
 async def main():
     # ws://localhost:8081/OCPP/
     # ws://localhost:9000/CP_2
-    async with websockets.connect(
-        "ws://localhost:8081/OCPP/", subprotocols=["ocpp2.0.1", "ocpp2.0"]
-    ) as ws:
 
-        charge_point = ChargePoint("OCPP", ws)
-        await asyncio.gather(
-            charge_point.start(), charge_point.send_boot_notification()
-        )
+    #load config json
+    with open("/config.json") as file:
+        config = json.load(file)
+
+    print("[Charging Point]Using config:")
+    print(config)
+
+    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    localhost_pem = pathlib.Path(__file__).with_name("localhost.pem")
+    ssl_context.load_verify_locations(localhost_pem)
+    ssl=ssl_context
+
+    # if ssl_context = True then it accepts valid ssl certificates elsewhere a CA cert is needed
+
+    if config.get("CSMS"):
+        if ssl_context:
+            async with websockets.connect(
+            config.get("CSMS"), subprotocols=["ocpp2.0.1", "ocpp2.0"],ssl=ssl_context) as ws:
+
+                charge_point = ChargePoint("OCPP", ws, 30, config)
+
+                await asyncio.gather(
+                    charge_point.start(), charge_point.send_boot_notification()
+                )
+        else:
+            # No SSL
+            async with websockets.connect(
+            config.get("CSMS"), subprotocols=["ocpp2.0.1", "ocpp2.0"], 
+        ) as ws:
+
+                charge_point = ChargePoint("OCPP", ws, 30, config)
+
+                await asyncio.gather(
+                    charge_point.start(), charge_point.send_boot_notification()
+                )
+
+    else:
+        print("CSMS endpoint not set")
 
 
 if __name__ == "__main__":

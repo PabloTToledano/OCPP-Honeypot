@@ -11,7 +11,4 @@ COPY ./requirements.txt /requirements.txt
 
 RUN pip install -r /requirements.txt
 
-ENV VT_API_KEY="YOUR VP KEY HERE"
-
-
 CMD ["python","/CSMS.py"]

@@ -5,14 +5,13 @@ RUN apk add --update git
 RUN wget https://github.com/PabloTToledano/ocpp/releases/download/v0.17.0/ocpp-0.17.0-py3-none-any.whl
 RUN pip install ocpp-0.17.0-py3-none-any.whl
 
-
-COPY ./charging_station.py /charging_station.py
-COPY ./variables.py /variables.py
 COPY ./requirements.txt /requirements.txt
-
 RUN pip install -r /requirements.txt
 
-ENV VT_API_KEY="YOUR VP KEY HERE"
+COPY ./charging_station.py /charging_station.py
+
+COPY ./config.json /config.json
+
 
 
 CMD ["python","/charging_station.py"]

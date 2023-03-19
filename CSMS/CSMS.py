@@ -328,8 +328,6 @@ async def main(address: str, port: int, ssl_context: ssl.SSLContext | None = Non
 
 
 if __name__ == "__main__":
-    # asyncio.run() is used when running this example with Python >= 3.7v
-
     parser = argparse.ArgumentParser(description="CSMS OCPP Honeypot")
     parser.add_argument(
         "-a",
@@ -362,9 +360,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # handler = MongoHandler(host="mongodb://uma:tfm@localhost:27017/", capped=True)
-    # logger = logging.getLogger("ocpp")
-    # logger.addHandler(handler)
+
     if args.secure and args.cert != "":
         if not os.path.isfile(args.cert):
             print(f"{args.cert} is not a file")

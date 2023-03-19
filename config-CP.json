@@ -1,0 +1,12 @@
+{
+    "type": "CP",
+    "CSMS": "ws://192.168.31.132:9000/CP_2",
+    "VT_API_KEY": "",
+    "OCPP_variables": {
+        "BasicAuthPassword": "password",
+        "NetworkConfigurationPriority": []
+    },
+    "connectors": 2,
+    "model": "EA Fast",
+    "vendor_name": "Signet"
+}
