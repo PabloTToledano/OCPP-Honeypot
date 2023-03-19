@@ -6,6 +6,7 @@ import os
 import io
 import json
 import websockets
+import ssl
 from datetime import datetime
 
 from ocpp.routing import on, after
@@ -409,19 +410,45 @@ async def main():
     with open("/config.json") as file:
         config = json.load(file)
 
-    print("[Charging Point]Using config:")
-    print(config)
-
-    # ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-    # localhost_pem = pathlib.Path(__file__).with_name("localhost.pem")
-    # ssl_context.load_verify_locations(localhost_pem)
-    # ssl=ssl_context
+    logging.info("[Charging Point]Using config:")
+    logging.info(config)
     ssl_context = None
-
-    # if ssl_context = True then it accepts valid ssl certificates elsewhere a CA cert is needed
-
     if config.get("CSMS"):
+           
+        if os.path.isfile(config.get("ssl_key")) and os.path.isfile(config.get("ssl_pem")):
+            # Security profile 3
+            if not  "wss" in config.get("CSMS"):
+                logging.info("Cannot use standard ws with security profile 2/3")
+                exit(-1)
+
+            logging.info("Security profile 3")
+            ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+            ssl_context.load_cert_chain(config.get("ssl_pem"), config.get("ssl_key"))
+            if os.path.isfile(config.get("local_CA")):
+                ssl_context.load_verify_locations(config.get("local_CA"))
+                logging.info(f"Using local CA: {config.get('local_CA')}")
+     
+        elif "wss" in config.get("CSMS"):
+            # Security profile 2
+            logging.info("Security profile 2")
+            username = config.get("username")
+            password = config.get("password")
+            if os.path.isfile(config.get("local_CA")):
+                ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+                ssl_context.load_verify_locations(config.get("local_CA"))
+                logging.info(f"Using local CA: {config.get('local_CA')}")
+            else:
+                # Trusted Certificated
+                ssl_context = True
+        else:
+            # Security profile 1
+            logging.info("Security profile 1")
+            username = config.get("username")
+            password = config.get("password")
+            
+            
         if ssl_context:
+            # Security profile 2/3
             async with websockets.connect(
             config.get("CSMS"), subprotocols=["ocpp2.0.1", "ocpp2.0"],ssl=ssl_context) as ws:
 
@@ -432,9 +459,10 @@ async def main():
                 )
         else:
             # No SSL
-            id = "CP-1"
+            # Security profile 1
+            uri = config.get("CSMS")[:5]
             async with websockets.connect(
-            config.get("CSMS")+id, subprotocols=["ocpp2.0.1", "ocpp2.0"], 
+            config.get("CSMS")+config.get("ID"), subprotocols=["ocpp2.0.1", "ocpp2.0"], 
         ) as ws:
 
                 charge_point = ChargePoint("OCPP", ws, 30, config)
@@ -444,7 +472,7 @@ async def main():
                 )
 
     else:
-        print("CSMS endpoint not set")
+        logging.info("CSMS endpoint not set")
 
 
 if __name__ == "__main__":

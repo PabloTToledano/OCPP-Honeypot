@@ -1,4 +1,5 @@
 {
+    "ID": "cp",
     "CSMS": "ws://csms1:9000/",
     "VT_API_KEY": "",
     "OCPP_variables": {
@@ -7,5 +8,10 @@
     },
     "connectors": 2,
     "model": "EA Fast",
-    "vendor_name": "Signet"
+    "vendor_name": "Signet",
+    "ssl_key": "/path/to/.key",
+    "ssl_pem": "/path/to/.pem",
+    "local_CA": "",
+    "username": "user",
+    "password": "password"
 }

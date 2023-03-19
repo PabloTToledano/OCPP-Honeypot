@@ -312,6 +312,19 @@ async def on_connect(websocket, path):
 
     await charge_point.start()
 
+class UserInfoProtocol(websockets.BasicAuthWebSocketServerProtocol):
+    async def check_credentials(self, username, password):
+        print(username)
+        print(password)
+        # if username != "token":
+        #     return False
+
+        # # user = get_user(password)
+        # if user is None:
+        #     return False
+
+        # self.user = user
+        return True
 
 async def main(address: str, port: int, ssl_context: ssl.SSLContext | None = None):
 
