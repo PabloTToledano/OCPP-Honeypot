@@ -1,4 +1,5 @@
 {
+    "type": "CP",
     "ID": "cp",
     "CSMS": "ws://csms1:9000/",
     "VT_API_KEY": "",

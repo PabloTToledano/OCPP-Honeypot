@@ -1,4 +1,5 @@
 import asyncio
+import http
 import logging
 import random
 import argparse
@@ -312,30 +313,78 @@ async def on_connect(websocket, path):
 
     await charge_point.start()
 
+
 class UserInfoProtocol(websockets.BasicAuthWebSocketServerProtocol):
     async def check_credentials(self, username, password):
-        print(username)
-        print(password)
-        # if username != "token":
-        #     return False
-
-        # # user = get_user(password)
-        # if user is None:
-        #     return False
-
-        # self.user = user
+        # For security profile 1/2
+        logging.info(username)
+        logging.info(password)
         return True
 
-async def main(address: str, port: int, ssl_context: ssl.SSLContext | None = None):
 
-    if ssl_context:
-        server = await websockets.serve(
-            on_connect, address, port, subprotocols=["ocpp2.0.1"], ssl=ssl_context
-        )
-    else:
-        server = await websockets.serve(
-            on_connect, address, port, subprotocols=["ocpp2.0.1"]
-        )
+class TLSCheckCert(websockets.WebSocketServerProtocol):
+    async def connection_made(self, transport: asyncio.BaseTransport) -> None:
+        """
+        Register connection and initialize a task to handle it.
+        """
+        transport.get_extra_info(...)
+        sslsock = transport.get_extra_info("ssl_object")
+        cert = sslsock.getpeercert()
+        # do whatever with the certificate
+
+        super().super().connection_made(transport)
+        # Register the connection with the server before creating the handler
+        # task. Registering at the beginning of the handler coroutine would
+        # create a race condition between the creation of the task, which
+        # schedules its execution, and the moment the handler starts running.
+        super().ws_server.register(self)
+        super().handler_task = super().loop.create_task(super().handler())
+
+
+async def main(address: str, port: int, security_profile: int):
+
+    logging.info(f"Security profile {security_profile}")
+    match security_profile:
+        case 1:
+            server = await websockets.serve(
+                on_connect,
+                address,
+                port,
+                subprotocols=["ocpp2.0.1"],
+                create_protocol=UserInfoProtocol,
+            )
+        case 2:
+            if not os.path.isfile(config.get("ssl_key")) or not os.path.isfile(
+                config.get("ssl_pem")
+            ):
+                logging.error("SSL certificated not found")
+                exit(-1)
+            ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            ssl_context.load_cert_chain(config.get("ssl_pem"), config.get("ssl_key"))
+            server = await websockets.serve(
+                on_connect,
+                address,
+                port,
+                subprotocols=["ocpp2.0.1"],
+                ssl=ssl_context,
+                create_protocol=UserInfoProtocol,
+            )
+        case 3:
+            if not os.path.isfile(config.get("ssl_key")) or not os.path.isfile(
+                config.get("ssl_pem")
+            ):
+                logging.error("SSL certificated not found")
+                exit(-1)
+            ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            ssl_context.load_cert_chain(config.get("ssl_pem"), config.get("ssl_key"))
+            server = await websockets.serve(
+                on_connect,
+                address,
+                port,
+                subprotocols=["ocpp2.0.1"],
+                ssl=ssl_context,
+                create_protocol=TLSCheckCert,
+            )
 
     logging.info("Server Started listening to new connections...")
     await server.wait_closed()
@@ -343,24 +392,17 @@ async def main(address: str, port: int, ssl_context: ssl.SSLContext | None = Non
 
 if __name__ == "__main__":
 
-    #load config json
+    # load config json
     with open("/config.json") as file:
         config = json.load(file)
 
     logging.info("[CSMS]Using config:")
     logging.info(config)
 
-    if not os.path.isfile(config.get("ssl_key")) or not os.path.isfile(config.get("ssl_pem")):
-        # Security profile 1
-        # TODO check CP password
-        logging.info("Security profile 1")
-        asyncio.run(main(config.get("IP","0.0.0.0"), config.get("port","9000")))
-
-    else:
-        # Security profile 2/3
-        logging.info("Security profile 2/3")
-        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        ssl_context.load_cert_chain(config.get("ssl_pem"), config.get("ssl_key"))
-        # Start main function
-        asyncio.run(main(config.get("IP","0.0.0.0"), config.get("port","9000"), ssl_context))
-    
+    asyncio.run(
+        main(
+            config.get("IP", "0.0.0.0"),
+            config.get("port", "9000"),
+            config.get("security_profile", 1),
+        )
+    )

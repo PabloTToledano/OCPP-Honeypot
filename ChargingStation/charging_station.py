@@ -18,22 +18,22 @@ LOGGER = logging.getLogger("ocpp")
 
 
 class ChargePoint(cp):
-
-    def __init__(self,id, connection, response_timeout, config):
-        cp.__init__(self,id,connection,response_timeout)    
+    def __init__(self, id, connection, response_timeout, config):
+        cp.__init__(self, id, connection, response_timeout)
         self.availability: str = "Operative"
-        self.model = config.get("model","UMA")
-        self.vendor = config.get("vendor_name","Andalucia")
-        self.connectors,self.reserved,self.reserved_exp = self.generate_connectors(config)
-        self.occp_variables = config.get("OCPP_variables",{})
+        self.model = config.get("model", "UMA")
+        self.vendor = config.get("vendor_name", "Andalucia")
+        self.connectors, self.reserved, self.reserved_exp = self.generate_connectors(
+            config
+        )
+        self.occp_variables = config.get("OCPP_variables", {})
         self.vt_client = None
         # Only create virus total client if token is found
-        if config.get("VT_API_KEY","") != "":
+        if config.get("VT_API_KEY", "") != "":
             vt_client = vt.Client(config.get("VT_API_KEY"))
 
-
-    def generate_connectors(self,config):
-        n_connectors = config.get("connectors",1)
+    def generate_connectors(self, config):
+        n_connectors = config.get("connectors", 1)
         connectors = []
         reserved = []
         reserved_exp = []
@@ -41,8 +41,7 @@ class ChargePoint(cp):
             connectors.append("Operative")
             reserved.append(False)
             reserved_exp.append(datetime.now())
-        return connectors,reserved,reserved_exp
-
+        return connectors, reserved, reserved_exp
 
     async def send_heartbeat(self, interval):
         request = call.HeartbeatPayload()
@@ -406,18 +405,23 @@ async def main():
     # ws://localhost:8081/OCPP/
     # ws://localhost:9000/CP_2
 
-    #load config json
+    # load config json
     with open("/config.json") as file:
         config = json.load(file)
 
     logging.info("[Charging Point]Using config:")
     logging.info(config)
     ssl_context = None
+    security_profile = 1
+
     if config.get("CSMS"):
-           
-        if os.path.isfile(config.get("ssl_key")) and os.path.isfile(config.get("ssl_pem")):
+
+        if os.path.isfile(config.get("ssl_key")) and os.path.isfile(
+            config.get("ssl_pem")
+        ):
             # Security profile 3
-            if not  "wss" in config.get("CSMS"):
+            security_profile = 3
+            if not "wss" in config.get("CSMS"):
                 logging.info("Cannot use standard ws with security profile 2/3")
                 exit(-1)
 
@@ -427,9 +431,10 @@ async def main():
             if os.path.isfile(config.get("local_CA")):
                 ssl_context.load_verify_locations(config.get("local_CA"))
                 logging.info(f"Using local CA: {config.get('local_CA')}")
-     
+
         elif "wss" in config.get("CSMS"):
             # Security profile 2
+            security_profile = 2
             logging.info("Security profile 2")
             username = config.get("username")
             password = config.get("password")
@@ -445,32 +450,37 @@ async def main():
             logging.info("Security profile 1")
             username = config.get("username")
             password = config.get("password")
-            
-            
-        if ssl_context:
-            # Security profile 2/3
-            async with websockets.connect(
-            config.get("CSMS"), subprotocols=["ocpp2.0.1", "ocpp2.0"],ssl=ssl_context) as ws:
 
-                charge_point = ChargePoint("OCPP", ws, 30, config)
+        match security_profile:
+            case 1:
+                # No SSL
+                # Security profile 1
+                uri = f"{config.get('CSMS')[:5]}{config.get('username')}:{config.get('password')}@{config.get('CSMS')[5:]}{config.get('ID')}"
+                logging.info(uri)
+                async with websockets.connect(
+                    uri,
+                    subprotocols=["ocpp2.0.1", "ocpp2.0"],
+                ) as ws:
 
-                await asyncio.gather(
-                    charge_point.start(), charge_point.send_boot_notification()
-                )
-        else:
-            # No SSL
-            # Security profile 1
-            uri = config.get("CSMS")[:5]
-            async with websockets.connect(
-            config.get("CSMS")+config.get("ID"), subprotocols=["ocpp2.0.1", "ocpp2.0"], 
-        ) as ws:
+                    charge_point = ChargePoint("OCPP", ws, 30, config)
 
-                charge_point = ChargePoint("OCPP", ws, 30, config)
+                    await asyncio.gather(
+                        charge_point.start(), charge_point.send_boot_notification()
+                    )
+            case 2:
+                async with websockets.connect(
+                    config.get("CSMS"),
+                    subprotocols=["ocpp2.0.1", "ocpp2.0"],
+                    ssl=ssl_context,
+                ) as ws:
 
-                await asyncio.gather(
-                    charge_point.start(), charge_point.send_boot_notification()
-                )
+                    charge_point = ChargePoint("OCPP", ws, 30, config)
 
+                    await asyncio.gather(
+                        charge_point.start(), charge_point.send_boot_notification()
+                    )
+            case 3:
+                pass
     else:
         logging.info("CSMS endpoint not set")
 
