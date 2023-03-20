@@ -1,6 +1,7 @@
 {
     "type": "CP",
-    "CSMS": "ws://192.168.31.132:9000/CP_2",
+    "ID": "cp",
+    "CSMS": "ws://csms1:9000/",
     "VT_API_KEY": "",
     "OCPP_variables": {
         "BasicAuthPassword": "password",
@@ -8,5 +9,10 @@
     },
     "connectors": 2,
     "model": "EA Fast",
-    "vendor_name": "Signet"
+    "vendor_name": "Signet",
+    "ssl_key": "/path/to/.key",
+    "ssl_pem": "/path/to/.pem",
+    "local_CA": "",
+    "username": "user",
+    "password": "password"
 }
