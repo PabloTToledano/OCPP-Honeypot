@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+
+{% block content %}
+    <h1>Album Finder</h1>
+    <h2>Write the name of your favourite artist and it will show you their best music albums!</h2>
+    <h3>Examples: Queen, U2, Aerosmith, Accept...</h3>
+    <form method="post" action="/injection">
+        <div class="list-group-item list-group-item-action flex-column align-items-start">
+            <input name="artist" placeholder="Artist" required/>
+            <input class="btn btn-primary" type="submit" value="Search" />
+        </div>
+    </form>
+    <textarea class="form-control form-control-lg" rows="20">{{result}}</textarea>
+{% endblock %}

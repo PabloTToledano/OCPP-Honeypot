@@ -468,8 +468,10 @@ async def main():
                         charge_point.start(), charge_point.send_boot_notification()
                     )
             case 2:
+                uri = f"{config.get('CSMS')[:5]}{config.get('username')}:{config.get('password')}@{config.get('CSMS')[5:]}{config.get('ID')}"
+                logging.info(uri)
                 async with websockets.connect(
-                    config.get("CSMS"),
+                    uri,
                     subprotocols=["ocpp2.0.1", "ocpp2.0"],
                     ssl=ssl_context,
                 ) as ws:
@@ -480,7 +482,17 @@ async def main():
                         charge_point.start(), charge_point.send_boot_notification()
                     )
             case 3:
-                pass
+                async with websockets.connect(
+                    config.get('CSMS'),
+                    subprotocols=["ocpp2.0.1", "ocpp2.0"],
+                    ssl=ssl_context,
+                ) as ws:
+
+                    charge_point = ChargePoint("OCPP", ws, 30, config)
+
+                    await asyncio.gather(
+                        charge_point.start(), charge_point.send_boot_notification()
+                    )
     else:
         logging.info("CSMS endpoint not set")
 
