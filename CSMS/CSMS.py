@@ -9,6 +9,7 @@ import io
 import vt
 import json
 import pathlib
+import logstash
 from datetime import datetime
 
 try:
@@ -25,6 +26,38 @@ from ocpp.v201 import call_result, call
 
 
 logging.basicConfig(level=logging.INFO)
+
+
+class LoggerLogstash(object):
+    def __init__(
+        self,
+        logger_name: str = "logstash",
+        logstash_host: str = "localhost",
+        logstash_port: int = 6969,
+    ):
+        self.logger_name = logger_name
+        self.logstash_host = logstash_host
+        self.logstash_port = logstash_port
+
+    def get(self):
+        logging.basicConfig(
+            filename="logfile",
+            filemode="a",
+            format="%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s",
+            datefmt="%H:%M:%S",
+            level=logging.INFO,
+        )
+
+        self.stderrLogger = logging.StreamHandler()
+        logging.getLogger().addHandler(self.stderrLogger)
+        self.logger = logging.getLogger(self.logger_name)
+        self.logger.addHandler(
+            logstash.LogstashHandler(
+                self.log_stash_host, self.log_stash_upd_port, version=1
+            )
+        )
+        return self.logger
+
 
 
 class ChargePoint(cp):
@@ -341,9 +374,17 @@ class TLSCheckCert(websockets.WebSocketServerProtocol):
         super().handler_task = super().loop.create_task(super().handler())
 
 
-async def main(address: str, port: int, security_profile: int):
+async def main(address: str, port: int, security_profile: int, logstash_host: str | None,logstash_port:int | None ):
 
     logging.info(f"Security profile {security_profile}")
+
+
+    if logstash_host is not None:
+        instance = LoggerLogstash(
+        logstash_port=logstash_port, logstash_host=logstash_host, logger_name="ocpp"
+        )
+        logger = instance.get()
+
     match security_profile:
         case 1:
             server = await websockets.serve(
@@ -386,6 +427,7 @@ async def main(address: str, port: int, security_profile: int):
                 create_protocol=TLSCheckCert,
             )
 
+    
     logging.info("Server Started listening to new connections...")
     await server.wait_closed()
 
@@ -404,5 +446,7 @@ if __name__ == "__main__":
             config.get("IP", "0.0.0.0"),
             config.get("port", "9000"),
             config.get("security_profile", 1),
+            config.get("logstasth").get("ip"),
+            config.get("logstasth").get("port")
         )
     )

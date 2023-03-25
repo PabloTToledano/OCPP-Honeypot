@@ -14,5 +14,9 @@
     "ssl_pem": "/path/to/.pem",
     "local_CA": "",
     "username": "user",
-    "password": "password"
+    "password": "password",
+    "logstasth": {
+        "ip": "192.168.31.132",
+        "port": 5959
+    }
 }

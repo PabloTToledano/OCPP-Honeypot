@@ -4,5 +4,9 @@
     "port": "9000",
     "ssl_key": "/path/to/.key",
     "ssl_pem": "/path/to/.pem",
-    "security_profile": 1
+    "security_profile": 1,
+    "logstasth": {
+        "ip": "localhost",
+        "port": 5959
+    }
 }

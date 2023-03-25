@@ -1,3 +1,4 @@
 ocpp
 websockets
 vt-py
+python-logstash
