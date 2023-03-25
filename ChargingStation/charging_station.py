@@ -4,19 +4,10 @@ import random
 import vt
 import os
 import io
+import json
+import websockets
+import ssl
 from datetime import datetime
-from variables import OCPPVariables
-
-try:
-    import websockets
-except ModuleNotFoundError:
-    print("This example relies on the 'websockets' package.")
-    print("Please install it by running: ")
-    print()
-    print(" $ pip install websockets")
-    import sys
-
-    sys.exit(1)
 
 from ocpp.routing import on, after
 from ocpp.v201 import ChargePoint as cp
@@ -26,15 +17,61 @@ logging.basicConfig(level=logging.INFO)
 LOGGER = logging.getLogger("ocpp")
 
 
+class LoggerLogstash(object):
+    def __init__(
+        self,
+        logger_name: str = "logstash",
+        logstash_host: str = "localhost",
+        logstash_port: int = 6969,
+    ):
+        self.logger_name = logger_name
+        self.logstash_host = logstash_host
+        self.logstash_port = logstash_port
+
+    def get(self):
+        logging.basicConfig(
+            filename="logfile",
+            filemode="a",
+            format="%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s",
+            datefmt="%H:%M:%S",
+            level=logging.INFO,
+        )
+
+        self.stderrLogger = logging.StreamHandler()
+        logging.getLogger().addHandler(self.stderrLogger)
+        self.logger = logging.getLogger(self.logger_name)
+        self.logger.addHandler(
+            logstash.LogstashHandler(
+                self.log_stash_host, self.log_stash_upd_port, version=1
+            )
+        )
+        return self.logger
+
 class ChargePoint(cp):
-    availability: str = "Operative"
-    connectors: list = ["Operative", "Operative"]
-    reserved: list = [False, False]
-    reserved_exp: list = [datetime.now(), datetime.now()]
-    occp_variables = OCPPVariables()
-    vt_client = None
-    if os.getenv("VT_API_KEY"):
-        vt_client = vt.Client(os.getenv("VT_API_KEY"))
+    def __init__(self, id, connection, response_timeout, config):
+        cp.__init__(self, id, connection, response_timeout)
+        self.availability: str = "Operative"
+        self.model = config.get("model", "UMA")
+        self.vendor = config.get("vendor_name", "Andalucia")
+        self.connectors, self.reserved, self.reserved_exp = self.generate_connectors(
+            config
+        )
+        self.occp_variables = config.get("OCPP_variables", {})
+        self.vt_client = None
+        # Only create virus total client if token is found
+        if config.get("VT_API_KEY", "") != "":
+            vt_client = vt.Client(config.get("VT_API_KEY"))
+
+    def generate_connectors(self, config):
+        n_connectors = config.get("connectors", 1)
+        connectors = []
+        reserved = []
+        reserved_exp = []
+        for i in range(n_connectors):
+            connectors.append("Operative")
+            reserved.append(False)
+            reserved_exp.append(datetime.now())
+        return connectors, reserved, reserved_exp
 
     async def send_heartbeat(self, interval):
         request = call.HeartbeatPayload()
@@ -45,8 +82,8 @@ class ChargePoint(cp):
     async def send_boot_notification(self):
         request = call.BootNotificationPayload(
             charging_station={
-                "model": "EA Fast",
-                "vendor_name": "Signet",
+                "model": self.model,
+                "vendor_name": self.vendor,
             },
             reason="PowerUp",
         )
@@ -90,8 +127,8 @@ class ChargePoint(cp):
         for variable in set_variable_data:
             # Do something with variable.get("attributeValue")
 
-            if self.occp_variables.variables.get(variable.get("variable"), None):
-                self.occp_variables.variables[variable.get("variable")] = variable.get(
+            if self.occp_variables.get(variable.get("variable"), None):
+                self.occp_variables[variable.get("variable")] = variable.get(
                     "attributeValue", ""
                 )
 
@@ -132,7 +169,7 @@ class ChargePoint(cp):
                     "attributeStatus": "Accepted",
                     "component": variable.get("component"),
                     "variable": variable.get("variable"),
-                    "attributeValue ": self.occp_variables.variables.get(
+                    "attributeValue ": self.occp_variables.get(
                         variable.get("variable"), ""
                     ),
                 }
@@ -189,8 +226,7 @@ class ChargePoint(cp):
 
     @on("GetLocalListVersion")
     def on_get_locallist_version(self, **kwargs):
-        # TODO retrieve versionNumber
-        return call_result.GetLocalListVersionPayload(version_number=1)
+        return call_result.GetLocalListVersionPayload(version_number=2)
 
     # O.DisplayMessage
     @on("SetDisplayMessages")
@@ -398,14 +434,105 @@ class ChargePoint(cp):
 async def main():
     # ws://localhost:8081/OCPP/
     # ws://localhost:9000/CP_2
-    async with websockets.connect(
-        "ws://localhost:8081/OCPP/", subprotocols=["ocpp2.0.1", "ocpp2.0"]
-    ) as ws:
 
-        charge_point = ChargePoint("OCPP", ws)
-        await asyncio.gather(
-            charge_point.start(), charge_point.send_boot_notification()
+    # load config json
+    with open("/config.json") as file:
+        config = json.load(file)
+
+    logging.info("[Charging Point]Using config:")
+    logging.info(config)
+    ssl_context = None
+    security_profile = 1
+
+
+    if config.get("logstasth").get("ip") is not None:
+        instance = LoggerLogstash(
+        logstash_port=config.get("logstasth").get("port"), logstash_host=config.get("logstasth").get("ip"), logger_name="ocpp"
         )
+        logger = instance.get()
+
+
+    if config.get("CSMS"):
+
+        if os.path.isfile(config.get("ssl_key")) and os.path.isfile(
+            config.get("ssl_pem")
+        ):
+            # Security profile 3
+            security_profile = 3
+            if not "wss" in config.get("CSMS"):
+                logging.info("Cannot use standard ws with security profile 2/3")
+                exit(-1)
+
+            logging.info("Security profile 3")
+            ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+            ssl_context.load_cert_chain(config.get("ssl_pem"), config.get("ssl_key"))
+            if os.path.isfile(config.get("local_CA")):
+                ssl_context.load_verify_locations(config.get("local_CA"))
+                logging.info(f"Using local CA: {config.get('local_CA')}")
+
+        elif "wss" in config.get("CSMS"):
+            # Security profile 2
+            security_profile = 2
+            logging.info("Security profile 2")
+            username = config.get("username")
+            password = config.get("password")
+            if os.path.isfile(config.get("local_CA")):
+                ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+                ssl_context.load_verify_locations(config.get("local_CA"))
+                logging.info(f"Using local CA: {config.get('local_CA')}")
+            else:
+                # Trusted Certificated
+                ssl_context = True
+        else:
+            # Security profile 1
+            logging.info("Security profile 1")
+            username = config.get("username")
+            password = config.get("password")
+
+        match security_profile:
+            case 1:
+                # No SSL
+                # Security profile 1
+                uri = f"{config.get('CSMS')[:5]}{config.get('username')}:{config.get('password')}@{config.get('CSMS')[5:]}{config.get('ID')}"
+                logging.info(uri)
+                async with websockets.connect(
+                    uri,
+                    subprotocols=["ocpp2.0.1", "ocpp2.0"],
+                ) as ws:
+
+                    charge_point = ChargePoint("OCPP", ws, 30, config)
+
+                    await asyncio.gather(
+                        charge_point.start(), charge_point.send_boot_notification()
+                    )
+            case 2:
+                uri = f"{config.get('CSMS')[:5]}{config.get('username')}:{config.get('password')}@{config.get('CSMS')[5:]}{config.get('ID')}"
+                logging.info(uri)
+                async with websockets.connect(
+                    uri,
+                    subprotocols=["ocpp2.0.1", "ocpp2.0"],
+                    ssl=ssl_context,
+                ) as ws:
+
+                    charge_point = ChargePoint("OCPP", ws, 30, config)
+
+                    await asyncio.gather(
+                        charge_point.start(), charge_point.send_boot_notification()
+                    )
+            case 3:
+                async with websockets.connect(
+                    config.get('CSMS'),
+                    subprotocols=["ocpp2.0.1", "ocpp2.0"],
+                    ssl=ssl_context,
+                ) as ws:
+
+                    charge_point = ChargePoint("OCPP", ws, 30, config)
+
+                    await asyncio.gather(
+                        charge_point.start(), charge_point.send_boot_notification()
+                    )
+    else:
+        logging.info("CSMS endpoint not set")
 
 
 if __name__ == "__main__":

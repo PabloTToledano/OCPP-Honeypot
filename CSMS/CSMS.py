@@ -1,4 +1,5 @@
 import asyncio
+import http
 import logging
 import random
 import argparse
@@ -6,7 +7,9 @@ import ssl
 import os
 import io
 import vt
+import json
 import pathlib
+import logstash
 from datetime import datetime
 
 try:
@@ -23,6 +26,38 @@ from ocpp.v201 import call_result, call
 
 
 logging.basicConfig(level=logging.INFO)
+
+
+class LoggerLogstash(object):
+    def __init__(
+        self,
+        logger_name: str = "logstash",
+        logstash_host: str = "localhost",
+        logstash_port: int = 6969,
+    ):
+        self.logger_name = logger_name
+        self.logstash_host = logstash_host
+        self.logstash_port = logstash_port
+
+    def get(self):
+        logging.basicConfig(
+            filename="logfile",
+            filemode="a",
+            format="%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s",
+            datefmt="%H:%M:%S",
+            level=logging.INFO,
+        )
+
+        self.stderrLogger = logging.StreamHandler()
+        logging.getLogger().addHandler(self.stderrLogger)
+        self.logger = logging.getLogger(self.logger_name)
+        self.logger.addHandler(
+            logstash.LogstashHandler(
+                self.log_stash_host, self.log_stash_upd_port, version=1
+            )
+        )
+        return self.logger
+
 
 
 class ChargePoint(cp):
@@ -312,68 +347,106 @@ async def on_connect(websocket, path):
     await charge_point.start()
 
 
-async def main(address: str, port: int, ssl_context: ssl.SSLContext | None = None):
+class UserInfoProtocol(websockets.BasicAuthWebSocketServerProtocol):
+    async def check_credentials(self, username, password):
+        # For security profile 1/2
+        logging.info(username)
+        logging.info(password)
+        return True
 
-    if ssl_context:
-        server = await websockets.serve(
-            on_connect, address, port, subprotocols=["ocpp2.0.1"], ssl=ssl_context
-        )
-    else:
-        server = await websockets.serve(
-            on_connect, address, port, subprotocols=["ocpp2.0.1"]
-        )
 
+class TLSCheckCert(websockets.WebSocketServerProtocol):
+    async def connection_made(self, transport: asyncio.BaseTransport) -> None:
+        """
+        Register connection and initialize a task to handle it.
+        """
+        transport.get_extra_info(...)
+        sslsock = transport.get_extra_info("ssl_object")
+        cert = sslsock.getpeercert()
+        # do whatever with the certificate
+
+        super().super().connection_made(transport)
+        # Register the connection with the server before creating the handler
+        # task. Registering at the beginning of the handler coroutine would
+        # create a race condition between the creation of the task, which
+        # schedules its execution, and the moment the handler starts running.
+        super().ws_server.register(self)
+        super().handler_task = super().loop.create_task(super().handler())
+
+
+async def main(address: str, port: int, security_profile: int, logstash_host: str | None,logstash_port:int | None ):
+
+    logging.info(f"Security profile {security_profile}")
+
+
+    if logstash_host is not None:
+        instance = LoggerLogstash(
+        logstash_port=logstash_port, logstash_host=logstash_host, logger_name="ocpp"
+        )
+        logger = instance.get()
+
+    match security_profile:
+        case 1:
+            server = await websockets.serve(
+                on_connect,
+                address,
+                port,
+                subprotocols=["ocpp2.0.1"],
+                create_protocol=UserInfoProtocol,
+            )
+        case 2:
+            if not os.path.isfile(config.get("ssl_key")) or not os.path.isfile(
+                config.get("ssl_pem")
+            ):
+                logging.error("SSL certificated not found")
+                exit(-1)
+            ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            ssl_context.load_cert_chain(config.get("ssl_pem"), config.get("ssl_key"))
+            server = await websockets.serve(
+                on_connect,
+                address,
+                port,
+                subprotocols=["ocpp2.0.1"],
+                ssl=ssl_context,
+                create_protocol=UserInfoProtocol,
+            )
+        case 3:
+            if not os.path.isfile(config.get("ssl_key")) or not os.path.isfile(
+                config.get("ssl_pem")
+            ):
+                logging.error("SSL certificated not found")
+                exit(-1)
+            ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            ssl_context.load_cert_chain(config.get("ssl_pem"), config.get("ssl_key"))
+            server = await websockets.serve(
+                on_connect,
+                address,
+                port,
+                subprotocols=["ocpp2.0.1"],
+                ssl=ssl_context,
+                create_protocol=TLSCheckCert,
+            )
+
+    
     logging.info("Server Started listening to new connections...")
     await server.wait_closed()
 
 
 if __name__ == "__main__":
-    # asyncio.run() is used when running this example with Python >= 3.7v
 
-    parser = argparse.ArgumentParser(description="CSMS OCPP Honeypot")
-    parser.add_argument(
-        "-a",
-        "--address",
-        type=str,
-        default="0.0.0.0",
-        required=False,
-        help="IP Address websocket",
-    )
-    parser.add_argument(
-        "-p", "--port", type=int, default=9000, required=False, help="Websocket port"
-    )
-    parser.add_argument("-s", "--secure", action="store_true", help="Run over TLS")
-    parser.add_argument(
-        "-c",
-        "--cert",
-        type=str,
-        default="",
-        required=False,
-        help="Path to a pem certificate",
-    )
-    parser.add_argument(
-        "-k",
-        "--key",
-        type=str,
-        default="",
-        required=False,
-        help="Path to a key certificate",
-    )
+    # load config json
+    with open("/config.json") as file:
+        config = json.load(file)
 
-    args = parser.parse_args()
+    logging.info("[CSMS]Using config:")
+    logging.info(config)
 
-    # handler = MongoHandler(host="mongodb://uma:tfm@localhost:27017/", capped=True)
-    # logger = logging.getLogger("ocpp")
-    # logger.addHandler(handler)
-    if args.secure and args.cert != "":
-        if not os.path.isfile(args.cert):
-            print(f"{args.cert} is not a file")
-            exit
-        if not os.path.isfile(args.key):
-            print(f"{args.key} is not a file")
-            exit
-
-        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        ssl_context.load_cert_chain(args.cert, args.key)
-        asyncio.run(main(args.address, args.port, ssl_context))
-    asyncio.run(main(args.address, args.port))
+    asyncio.run(
+        main(
+            config.get("IP", "0.0.0.0"),
+            config.get("port", "9000"),
+            config.get("security_profile", 1),
+            config.get("logstasth").get("ip"),
+            config.get("logstasth").get("port")
+        )
+    )

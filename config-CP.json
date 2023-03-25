@@ -1,0 +1,22 @@
+{
+    "type": "CP",
+    "ID": "cp",
+    "CSMS": "ws://csms1:9000/",
+    "VT_API_KEY": "",
+    "OCPP_variables": {
+        "BasicAuthPassword": "password",
+        "NetworkConfigurationPriority": []
+    },
+    "connectors": 2,
+    "model": "EA Fast",
+    "vendor_name": "Signet",
+    "ssl_key": "/path/to/.key",
+    "ssl_pem": "/path/to/.pem",
+    "local_CA": "",
+    "username": "user",
+    "password": "password",
+    "logstasth": {
+        "ip": "localhost",
+        "port": 5959
+    }
+}
