@@ -6,6 +6,7 @@ import os
 import io
 import json
 import websockets
+import logstash
 import ssl
 from datetime import datetime
 
@@ -42,7 +43,7 @@ class LoggerLogstash(object):
         self.logger = logging.getLogger(self.logger_name)
         self.logger.addHandler(
             logstash.LogstashHandler(
-                self.log_stash_host, self.log_stash_upd_port, version=1
+                self.logstash_host, self.logstash_port, version=1
             )
         )
         return self.logger
