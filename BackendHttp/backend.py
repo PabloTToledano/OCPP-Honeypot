@@ -6,6 +6,7 @@ from datetime import datetime
 import logging
 import ssl
 import json
+import os
 from ocpp.routing import on
 from ocpp.v201 import ChargePoint as cp
 from ocpp.v201.enums import Action, RegistrationStatusType
