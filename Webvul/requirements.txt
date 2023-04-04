@@ -1,4 +1,2 @@
-Flask
-Jinja2
-flask_sqlalchemy
-flask_httpauth
+aiohttp
+aiodns
