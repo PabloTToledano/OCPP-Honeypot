@@ -13,7 +13,7 @@ from datetime import datetime
 from ocpp.routing import on, after
 from ocpp.v201 import ChargePoint as cp
 from ocpp.v201 import call, call_result
-
+from ocpp.v201 import datatypes, enums
 logging.basicConfig(level=logging.INFO)
 LOGGER = logging.getLogger("ocpp")
 
@@ -122,12 +122,15 @@ class ChargePoint(cp):
     def on_setvariables(self, set_variable_data, **kwargs):
         # set_variable_data list of dict with contents of SetVariableDataType
         # for every variable respond with a dict of  SetVariableResultType
+        
+
+
 
         # attributeStatus: Accepted, Rejected, UnknownVariable, RebootRequired
         variable_result = []
         for variable in set_variable_data:
             # Do something with variable.get("attributeValue")
-
+            # variable_data = datatypes.SetVariableResultType(attribute_status=enums.SetVariableStatusType.accepted,component=datatypes.ComponentType(name=""),variable=datatypes.VariableType(name="", instance=""))
             if self.occp_variables.get(variable.get("variable"), None):
                 self.occp_variables[variable.get("variable")] = variable.get(
                     "attributeValue", ""
@@ -156,25 +159,29 @@ class ChargePoint(cp):
         return call_result.SetVariablesPayload(set_variable_result=variable_result)
 
     @on("GetVariables")
-    def on_getvariables(self, get_variable_data, **kwargs):
+    def on_getvariables(self, get_variable_data: list, **kwargs):
         # get_variable_data list of dict with contents of GetVariableDataType
         # for every variable respond with a dict of  SetVariableResultType
 
         # attributeStatus: Accepted, Rejected, UnknownVariable, RebootRequired
         # if status rejected then attibuteValue empty
         variable_result = []
-        for variable in get_variable_data:
-            variable_result.append(
-                {
-                    "attributeType": variable.get("attributeType", "Actual"),
-                    "attributeStatus": "Accepted",
-                    "component": variable.get("component"),
-                    "variable": variable.get("variable"),
-                    "attributeValue ": self.occp_variables.get(
-                        variable.get("variable"), ""
-                    ),
-                }
-            )
+        logging.info(get_variable_data)
+        if len(get_variable_data) == 1 and get_variable_data[0]["variable"]["name"]=="all":
+            # send all
+            for variable_name in self.occp_variables:
+                variable_data = datatypes.GetVariableDataType(component=datatypes.ComponentType(name="charger"),variable=datatypes.VariableType(name="all"))
+                variable_result.append(
+                    datatypes.GetVariableResultType(attribute_status=enums.SetVariableStatusType.accepted,component=datatypes.ComponentType(name="evse"),variable=datatypes.VariableType(name=variable_name),attribute_value=self.occp_variables[variable_name])
+                    )
+        else:
+            for variable_request in get_variable_data:
+                variable_name = variable_request.get('variable',{'name': 'placeholder'}).get('name','placeholder')
+                component_name = variable_request.get('component',{'name': 'evse'}).get('name','evse')
+                variable_result.append(
+                    datatypes.GetVariableResultType(attribute_status=enums.SetVariableStatusType.accepted,component=datatypes.ComponentType(name=component_name),variable=datatypes.VariableType(name=variable_name),attribute_value=self.occp_variables[variable_name])
+                    )
+
         return call_result.GetVariablesPayload(get_variable_result=variable_result)
 
     @on("DataTransfer")

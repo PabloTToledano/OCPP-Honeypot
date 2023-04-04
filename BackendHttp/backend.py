@@ -7,10 +7,7 @@ import logging
 import ssl
 import json
 import os
-from ocpp.routing import on
-from ocpp.v201 import ChargePoint as cp
-from ocpp.v201.enums import Action, RegistrationStatusType
-from ocpp.v201 import call_result, call
+from ocpp.v201 import datatypes
 from CSMS import ChargePoint, LoggerLogstash, TLSCheckCert, UserInfoProtocol
 
 
@@ -49,6 +46,24 @@ class CentralSystem:
     #     for cp in self._chargers:
     #         await cp.change_configuration(key, value)
 
+    async def change_variables(self, id: str,variable_data: list ):
+        for cp in self._chargers:
+            if cp.id == id:
+                await cp.send_set_variables(variable_data)
+
+
+    async def get_variables(self, id: str,get_variable_data: list ):
+        for cp in self._chargers:
+            if cp.id == id:
+                result = await cp.send_get_variables(get_variable_data)
+                return result.get_variable_result
+
+    async def get_connected_chargers(self):
+        ids = []
+        for cp in self._chargers:
+            ids.append(cp.id)
+        return ids
+
     def disconnect_charger(self, id: str):
         for cp, task in self._chargers.items():
             if cp.id == id:
@@ -56,6 +71,34 @@ class CentralSystem:
                 return
 
         raise ValueError(f"Charger {id} not connected.")
+
+
+async def get_variables(request):
+    """HTTP handler for getting the ids of all charge points."""
+    data = await request.json()
+    csms = request.app["csms"]
+    variable_data = datatypes.GetVariableDataType(component=datatypes.ComponentType(name="evse"),variable=datatypes.VariableType(name="all"))
+    result = await csms.get_variables(data["id"], data.get("variable_data",[variable_data]))
+
+    return web.Response(text=json.dumps({"result":result}))
+
+async def set_variables(request):
+    """HTTP handler for getting the ids of all charge points."""
+    data = await request.json()
+    csms = request.app["csms"]
+    # {"attributeValue":"","component":"",variable:""}
+    await csms.set_variables(data["id"], data.get("variable_data",[]))
+
+    return web.Response(text="OK")
+
+async def get_chargers(request):
+    """HTTP handler for getting the ids of all charge points."""
+    # data = await request.json()
+    csms = request.app["csms"]
+
+    ids = await csms.get_connected_chargers()
+
+    return web.Response(text=json.dumps({"ids":ids}))
 
 
 async def change_config(request):
@@ -168,6 +211,9 @@ async def create_http_server(csms: CentralSystem):
     app = web.Application()
     app.add_routes([web.get("/", change_config)])
     app.add_routes([web.post("/disconnect", disconnect_charger)])
+    app.add_routes([web.get("/ids", get_chargers)])
+    app.add_routes([web.post("/variables", set_variables)])
+    app.add_routes([web.get("/variables", get_variables)])
 
     # Put CSMS in app so it can be accessed from request handlers.
     # https://docs.aiohttp.org/en/stable/faq.html#where-do-i-put-my-database-connection-so-handlers-can-access-it
@@ -177,7 +223,7 @@ async def create_http_server(csms: CentralSystem):
     runner = web.AppRunner(app)
     await runner.setup()
 
-    site = web.TCPSite(runner, "localhost", 8080)
+    site = web.TCPSite(runner, "0.0.0.0", 8080)
     return site
 
 

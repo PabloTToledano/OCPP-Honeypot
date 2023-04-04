@@ -5,7 +5,7 @@
     "VT_API_KEY": "",
     "OCPP_variables": {
         "BasicAuthPassword": "password",
-        "NetworkConfigurationPriority": []
+        "placeholder": "empty"
     },
     "connectors": 2,
     "model": "EA Fast",

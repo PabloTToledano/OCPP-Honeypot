@@ -71,7 +71,7 @@ class ChargePoint(cp):
         print(reason)
         return call_result.BootNotificationPayload(
             current_time=datetime.utcnow().isoformat(),
-            interval=10,
+            interval=1000,
             status="Accepted",
         )
 
@@ -270,7 +270,7 @@ class ChargePoint(cp):
         # component, variable
 
         request = call.GetVariablesPayload(get_variable_data=variable_data)
-        response = await self.call(request)
+        return await self.call(request)
 
     async def send_set_network_profile(
         self, configuration_slot: int, connection_data: dict
