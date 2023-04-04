@@ -107,7 +107,7 @@ async def create_websocket_server(csms: CentralSystem):
 
 async def create_http_server(csms: CentralSystem):
     app = web.Application()
-    app.add_routes([web.post("/", change_config)])
+    app.add_routes([web.get("/", change_config)])
     app.add_routes([web.post("/disconnect", disconnect_charger)])
 
     # Put CSMS in app so it can be accessed from request handlers.
@@ -127,8 +127,9 @@ async def main():
 
     websocket_server = await create_websocket_server(csms)
     http_server = await create_http_server(csms)
-
-    await asyncio.wait([websocket_server.wait_closed(), http_server.start()])
+    websocket_task = asyncio.create_task(websocket_server.wait_closed())
+    http_task = asyncio.create_task(http_server.start())
+    await asyncio.wait([websocket_task, http_task])
 
 
 if __name__ == "__main__":

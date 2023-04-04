@@ -52,9 +52,12 @@ class LoggerLogstash(object):
         logging.getLogger().addHandler(self.stderrLogger)
         self.logger = logging.getLogger(self.logger_name)
         self.logger.addHandler(
-            logstash.LogstashHandler(self.logstash_host, self.logstash_port, version=1)
+            logstash.LogstashHandler(
+                self.logstash_host, self.logstash_port, version=1
+            )
         )
         return self.logger
+
 
 
 class ChargePoint(cp):
@@ -371,19 +374,14 @@ class TLSCheckCert(websockets.WebSocketServerProtocol):
         super().handler_task = super().loop.create_task(super().handler())
 
 
-async def run_ocpp_websocket(
-    address: str,
-    port: int,
-    security_profile: int,
-    logstash_host: str | None,
-    logstash_port: int | None,
-):
+async def main(address: str, port: int, security_profile: int, logstash_host: str | None,logstash_port:int | None ):
 
     logging.info(f"Security profile {security_profile}")
 
+
     if logstash_host is not None:
         instance = LoggerLogstash(
-            logstash_port=logstash_port, logstash_host=logstash_host, logger_name="ocpp"
+        logstash_port=logstash_port, logstash_host=logstash_host, logger_name="ocpp"
         )
         logger = instance.get()
 
@@ -429,6 +427,7 @@ async def run_ocpp_websocket(
                 create_protocol=TLSCheckCert,
             )
 
+    
     logging.info("Server Started listening to new connections...")
     await server.wait_closed()
 
@@ -443,11 +442,11 @@ if __name__ == "__main__":
     logging.info(config)
 
     asyncio.run(
-        run_ocpp_websocket(
+        main(
             config.get("IP", "0.0.0.0"),
             config.get("port", "9000"),
             config.get("security_profile", 1),
             config.get("logstasth").get("ip"),
-            config.get("logstasth").get("port"),
+            config.get("logstasth").get("port")
         )
     )
