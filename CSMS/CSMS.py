@@ -1,8 +1,6 @@
 import asyncio
-import http
 import logging
 import random
-import argparse
 import ssl
 import os
 import io
@@ -12,13 +10,8 @@ import pathlib
 import logstash
 from datetime import datetime
 
-try:
-    import websockets
-except ModuleNotFoundError:
-    print("This honeypot uses the 'websockets' and ocpp package.")
-    import sys
+import websockets
 
-    sys.exit(1)
 
 from ocpp.routing import on
 from ocpp.v201 import ChargePoint as cp

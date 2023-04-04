@@ -3,12 +3,14 @@ import websockets
 from aiohttp import web
 from functools import partial
 from datetime import datetime
-
+import logging
+import ssl
+import json
 from ocpp.routing import on
 from ocpp.v201 import ChargePoint as cp
 from ocpp.v201.enums import Action, RegistrationStatusType
 from ocpp.v201 import call_result, call
-from CSMS import ChargePoint
+from CSMS import ChargePoint, LoggerLogstash, TLSCheckCert, UserInfoProtocol
 
 
 class CentralSystem:
@@ -98,11 +100,67 @@ async def on_connect(websocket, path, csms):
     await queue.get()
 
 
-async def create_websocket_server(csms: CentralSystem):
+async def create_websocket_server(csms: CentralSystem, config: dict):
+
+    address = config.get("IP", "0.0.0.0")
+    port = config.get("port", "9000")
+    security_profile = config.get("security_profile", 1)
+    logstash_host = config.get("logstasth").get("ip")
+    logstash_port = config.get("logstasth").get("port")
 
     # Add security profiles
     handler = partial(on_connect, csms=csms)
-    return await websockets.serve(handler, "0.0.0.0", 9000, subprotocols=["ocpp1.6"])
+    logging.info(f"Security profile {security_profile}")
+
+    if logstash_host is not None:
+        instance = LoggerLogstash(
+            logstash_port=logstash_port, logstash_host=logstash_host, logger_name="ocpp"
+        )
+        logger = instance.get()
+
+    match security_profile:
+        case 1:
+            return await websockets.serve(
+                handler,
+                address,
+                port,
+                subprotocols=["ocpp2.0.1"],
+                create_protocol=UserInfoProtocol,
+            )
+        case 2:
+            if not os.path.isfile(config.get("ssl_key")) or not os.path.isfile(
+                config.get("ssl_pem")
+            ):
+                logging.error("SSL certificated not found")
+                exit(-1)
+            ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            ssl_context.load_cert_chain(config.get("ssl_pem"), config.get("ssl_key"))
+            return await websockets.serve(
+                handler,
+                address,
+                port,
+                subprotocols=["ocpp2.0.1"],
+                ssl=ssl_context,
+                create_protocol=UserInfoProtocol,
+            )
+        case 3:
+            if not os.path.isfile(config.get("ssl_key")) or not os.path.isfile(
+                config.get("ssl_pem")
+            ):
+                logging.error("SSL certificated not found")
+                exit(-1)
+            ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            ssl_context.load_cert_chain(config.get("ssl_pem"), config.get("ssl_key"))
+            return await websockets.serve(
+                handler,
+                address,
+                port,
+                subprotocols=["ocpp2.0.1"],
+                ssl=ssl_context,
+                create_protocol=TLSCheckCert,
+            )
+
+    logging.info("Server Started listening to new connections...")
 
 
 async def create_http_server(csms: CentralSystem):
@@ -124,8 +182,10 @@ async def create_http_server(csms: CentralSystem):
 
 async def main():
     csms = CentralSystem()
+    with open("./config.json") as file:
+        config = json.load(file)
 
-    websocket_server = await create_websocket_server(csms)
+    websocket_server = await create_websocket_server(csms, config)
     http_server = await create_http_server(csms)
     websocket_task = asyncio.create_task(websocket_server.wait_closed())
     http_task = asyncio.create_task(http_server.start())
