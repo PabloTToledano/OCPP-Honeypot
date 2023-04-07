@@ -405,20 +405,20 @@ class ChargePoint(cp):
         **kwargs,
     ):
         # free charging station
-        if id > len(self.reserved):
+        if reservation_id > len(self.reserved):
             return call_result.CancelReservationPayload(
                 status="Rejected",
                 status_info=datatypes.StatusInfoType(
-                    reason_code="Connector not available"
+                    reason_code="2", additional_info="Connector not available"
                 ),
             )
-        self.reserved[id] = False
+        self.reserved[reservation_id] = False
         return call_result.CancelReservationPayload(status="Accepted")
 
     @after("CancelReservation")
     async def after_cancel_reservation(self, **kwargs):
         request = call.StatusNotificationPayload(
-            timestamp=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S") + "Z",
+            timestamp=datetime.isoformat(datetime.utcnow()),
             connector_status="Available",
             evse_id=0,
             connector_id=0,

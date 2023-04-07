@@ -77,6 +77,14 @@ class CentralSystem:
 
         raise ValueError(f"Charger {id} not connected.")
 
+    async def cancel_reserve(self, id: str, connector: int = 1):
+        for cp, task in self._chargers.items():
+            if cp.id == id:
+                result = await cp.send_reserve_cancel(reservation_id=connector)
+                return result.status
+
+        raise ValueError(f"Charger {id} not connected.")
+
 
 async def get_variables(request):
     """HTTP handler for getting the ids of all charge points."""
@@ -124,7 +132,7 @@ async def home(request):
 
 
 async def reserve(request):
-    """HTTP handler for disconnecting a charger."""
+    """HTTP handler for reserving a charger."""
     data = await request.json()
     csms = request.app["csms"]
     expiry_date_time = datetime.utcnow() + timedelta(hours=1)
@@ -141,6 +149,21 @@ async def reserve(request):
     except ValueError as e:
         print(f"Failed to reserve charger: {e}")
         return web.Response(status=404)
+
+    return web.Response(text=json.dumps({"result": result}))
+
+
+async def cancel_reservation(request):
+    """HTTP handler for canceling a reservation"""
+    data = await request.json()
+    csms = request.app["csms"]
+    try:
+        result = await csms.cancel_reserve(
+            data["id"], connector=data.get("connector", 1)
+        )
+    except ValueError as e:
+        print(f"Failed to cancel reservation reserve charger: {e}")
+        return web.Response(status=404, text=f"{e}")
 
     return web.Response(text=json.dumps({"result": result}))
 
@@ -230,6 +253,7 @@ async def create_http_server(csms: CentralSystem):
     app = web.Application()
     app.add_routes([web.get("/", home)])
     app.add_routes([web.post("/reserve", reserve)])
+    app.add_routes([web.post("/cancelReservation", cancel_reservation)])
     app.add_routes([web.get("/chargers", get_chargers)])
     app.add_routes([web.post("/variables", set_variables)])
     app.add_routes([web.get("/variables", get_variables)])

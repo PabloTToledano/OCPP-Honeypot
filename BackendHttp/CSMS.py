@@ -293,6 +293,13 @@ class ChargePoint(cp):
         )
         return await self.call(request)
 
+    async def send_reserve_cancel(
+        self,
+        reservation_id: int
+    ):
+        request = call.CancelReservationPayload(reservation_id=reservation_id)
+        return await self.call(request)
+
     async def send_sendlocallist(
         self,
         version_number: int,
