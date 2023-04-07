@@ -386,7 +386,7 @@ class ChargePoint(cp):
                 return call_result.ReserveNowPayload(
                     status="Rejected",
                     status_info=datatypes.StatusInfoType(
-                        reason_code="Connector not available"
+                        reason_code="2", additional_info="Connector not available"
                     ),
                 )
             if self.reserved[id] and self.reserved_exp[id] > datetime.now():

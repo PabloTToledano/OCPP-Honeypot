@@ -2,12 +2,12 @@ import asyncio
 import websockets
 from aiohttp import web
 from functools import partial
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 import ssl
 import json
 import os
-from ocpp.v201 import datatypes
+from ocpp.v201 import datatypes, enums
 from CSMS import ChargePoint, LoggerLogstash, TLSCheckCert, UserInfoProtocol
 
 
@@ -63,13 +63,14 @@ class CentralSystem:
             ids.append(cp.id)
         return ids
 
-    async def reserve_now(self, id: str, id_token: str):
+    async def reserve_now(
+        self, id: str, id_token: dict, expiry_date_time: datetime, connector: int = 1
+    ):
         for cp, task in self._chargers.items():
             if cp.id == id:
                 result = await cp.send_reserve_now(
-                    id=1,
-                    expiry_date_time=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
-                    + "Z",
+                    id=connector,
+                    expiry_date_time=datetime.isoformat(expiry_date_time),
                     id_token=id_token,
                 )
                 return result.status
@@ -122,18 +123,26 @@ async def home(request):
     return web.Response(text="OK")
 
 
-async def disconnect_charger(request):
+async def reserve(request):
     """HTTP handler for disconnecting a charger."""
     data = await request.json()
     csms = request.app["csms"]
+    expiry_date_time = datetime.utcnow() + timedelta(hours=1)
 
     try:
-        csms.disconnect_charger(data["id"])
+        result = await csms.reserve_now(
+            data["id"],
+            datatypes.IdTokenType(
+                id_token=data["idToken"], type=enums.IdTokenType.central
+            ),
+            expiry_date_time,
+            data.get("connector", 1),
+        )
     except ValueError as e:
-        print(f"Failed to disconnect charger: {e}")
+        print(f"Failed to reserve charger: {e}")
         return web.Response(status=404)
 
-    return web.Response()
+    return web.Response(text=json.dumps({"result": result}))
 
 
 async def on_connect(websocket, path, csms):
@@ -220,7 +229,7 @@ async def create_websocket_server(csms: CentralSystem, config: dict):
 async def create_http_server(csms: CentralSystem):
     app = web.Application()
     app.add_routes([web.get("/", home)])
-    app.add_routes([web.post("/disconnect", disconnect_charger)])
+    app.add_routes([web.post("/reserve", reserve)])
     app.add_routes([web.get("/chargers", get_chargers)])
     app.add_routes([web.post("/variables", set_variables)])
     app.add_routes([web.get("/variables", get_variables)])
