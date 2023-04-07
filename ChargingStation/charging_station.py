@@ -14,6 +14,7 @@ from ocpp.routing import on, after
 from ocpp.v201 import ChargePoint as cp
 from ocpp.v201 import call, call_result
 from ocpp.v201 import datatypes, enums
+
 logging.basicConfig(level=logging.INFO)
 LOGGER = logging.getLogger("ocpp")
 
@@ -42,11 +43,10 @@ class LoggerLogstash(object):
         logging.getLogger().addHandler(self.stderrLogger)
         self.logger = logging.getLogger(self.logger_name)
         self.logger.addHandler(
-            logstash.LogstashHandler(
-                self.logstash_host, self.logstash_port, version=1
-            )
+            logstash.LogstashHandler(self.logstash_host, self.logstash_port, version=1)
         )
         return self.logger
+
 
 class ChargePoint(cp):
     def __init__(self, id, connection, response_timeout, config):
@@ -163,21 +163,45 @@ class ChargePoint(cp):
         # if status rejected then attibuteValue empty
         variable_result = []
         # Custom case to get all variables
-        if len(get_variable_data) == 1 and get_variable_data[0]["variable"]["name"]=="all":
+        if (
+            len(get_variable_data) == 1
+            and get_variable_data[0]["variable"]["name"] == "all"
+        ):
             # send all
             for component_name in self.occp_variables:
                 for variable_name in self.occp_variables[component_name]:
-                    variable_data = datatypes.GetVariableDataType(component=datatypes.ComponentType(name="charger"),variable=datatypes.VariableType(name="all"))
+                    variable_data = datatypes.GetVariableDataType(
+                        component=datatypes.ComponentType(name="charger"),
+                        variable=datatypes.VariableType(name="all"),
+                    )
                     variable_result.append(
-                        datatypes.GetVariableResultType(attribute_status=enums.SetVariableStatusType.accepted,component=datatypes.ComponentType(name=component_name),variable=datatypes.VariableType(name=variable_name),attribute_value=self.occp_variables[component_name][variable_name])
+                        datatypes.GetVariableResultType(
+                            attribute_status=enums.SetVariableStatusType.accepted,
+                            component=datatypes.ComponentType(name=component_name),
+                            variable=datatypes.VariableType(name=variable_name),
+                            attribute_value=self.occp_variables[component_name][
+                                variable_name
+                            ],
                         )
+                    )
         else:
             for variable_request in get_variable_data:
-                variable_name = variable_request.get('variable',{'name': 'placeholder'}).get('name','placeholder')
-                component_name = variable_request.get('component',{'name': 'evse'}).get('name','evse')
+                variable_name = variable_request.get(
+                    "variable", {"name": "placeholder"}
+                ).get("name", "placeholder")
+                component_name = variable_request.get(
+                    "component", {"name": "evse"}
+                ).get("name", "evse")
                 variable_result.append(
-                    datatypes.GetVariableResultType(attribute_status=enums.SetVariableStatusType.accepted,component=datatypes.ComponentType(name=component_name),variable=datatypes.VariableType(name=variable_name),attribute_value=self.occp_variables[component_name][variable_name])
+                    datatypes.GetVariableResultType(
+                        attribute_status=enums.SetVariableStatusType.accepted,
+                        component=datatypes.ComponentType(name=component_name),
+                        variable=datatypes.VariableType(name=variable_name),
+                        attribute_value=self.occp_variables[component_name][
+                            variable_name
+                        ],
                     )
+                )
 
         return call_result.GetVariablesPayload(get_variable_result=variable_result)
 
@@ -285,10 +309,14 @@ class ChargePoint(cp):
 
     @after("GetLog")
     async def after_get_log(self, **kwargs):
-        request = call.LogStatusNotificationPayload(status="Uploading", request_id=self.request_id)
+        request = call.LogStatusNotificationPayload(
+            status="Uploading", request_id=self.request_id
+        )
         response = await self.call(request)
         # upload a fake log file to log["remoteLocation"]
-        request = call.LogStatusNotificationPayload(status="Uploaded", request_id=self.request_id)
+        request = call.LogStatusNotificationPayload(
+            status="Uploaded", request_id=self.request_id
+        )
         response = await self.call(request)
 
     @on("CustomerInformation")
@@ -354,11 +382,18 @@ class ChargePoint(cp):
         **kwargs,
     ):
         try:
-            if self.reserved and self.reserved_exp > datetime.now():
+            if id > len(self.reserved):
+                return call_result.ReserveNowPayload(
+                    status="Rejected",
+                    status_info=datatypes.StatusInfoType(
+                        reason_code="Connector not available"
+                    ),
+                )
+            if self.reserved[id] and self.reserved_exp[id] > datetime.now():
                 return call_result.ReserveNowPayload(status="Occupied")
             else:
-                self.reserved = True
-                self.reserved_exp = datetime.fromisoformat(expiry_date_time)
+                self.reserved[id] = True
+                self.reserved_exp[id] = datetime.fromisoformat(expiry_date_time)
                 return call_result.ReserveNowPayload(status="Accepted")
         except:
             return call_result.ReserveNowPayload(status="Rejected")
@@ -370,7 +405,14 @@ class ChargePoint(cp):
         **kwargs,
     ):
         # free charging station
-        self.reserved = False
+        if id > len(self.reserved):
+            return call_result.CancelReservationPayload(
+                status="Rejected",
+                status_info=datatypes.StatusInfoType(
+                    reason_code="Connector not available"
+                ),
+            )
+        self.reserved[id] = False
         return call_result.CancelReservationPayload(status="Accepted")
 
     @after("CancelReservation")
@@ -422,7 +464,6 @@ class ChargePoint(cp):
         charging_profile: dict | None = None,
         **kwargs,
     ):
-
         return call_result.RequestStartTransactionPayload(status="Accepted")
 
     @on("SetChargingProfile")
@@ -432,7 +473,6 @@ class ChargePoint(cp):
         charging_profile: dict,
         **kwargs,
     ):
-
         return call_result.SetChargingProfilePayload(status="Accepted")
 
 
@@ -449,16 +489,15 @@ async def main():
     ssl_context = None
     security_profile = 1
 
-
     if config.get("logstasth").get("ip") is not None:
         instance = LoggerLogstash(
-        logstash_port=config.get("logstasth").get("port"), logstash_host=config.get("logstasth").get("ip"), logger_name="ocpp"
+            logstash_port=config.get("logstasth").get("port"),
+            logstash_host=config.get("logstasth").get("ip"),
+            logger_name="ocpp",
         )
         logger = instance.get()
 
-
     if config.get("CSMS"):
-
         if os.path.isfile(config.get("ssl_key")) and os.path.isfile(
             config.get("ssl_pem")
         ):
@@ -504,7 +543,6 @@ async def main():
                     uri,
                     subprotocols=["ocpp2.0.1", "ocpp2.0"],
                 ) as ws:
-
                     charge_point = ChargePoint("OCPP", ws, 30, config)
 
                     await asyncio.gather(
@@ -518,7 +556,6 @@ async def main():
                     subprotocols=["ocpp2.0.1", "ocpp2.0"],
                     ssl=ssl_context,
                 ) as ws:
-
                     charge_point = ChargePoint("OCPP", ws, 30, config)
 
                     await asyncio.gather(
@@ -526,11 +563,10 @@ async def main():
                     )
             case 3:
                 async with websockets.connect(
-                    config.get('CSMS'),
+                    config.get("CSMS"),
                     subprotocols=["ocpp2.0.1", "ocpp2.0"],
                     ssl=ssl_context,
                 ) as ws:
-
                     charge_point = ChargePoint("OCPP", ws, 30, config)
 
                     await asyncio.gather(
