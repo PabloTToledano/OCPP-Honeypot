@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_file
+from flask import Flask, render_template, request, send_file, redirect
 from flask_wtf import Form
 from wtforms.fields import DateField
 import requests
@@ -46,15 +46,19 @@ def charger():
         status = json_data[charger_id]["connectors"][connector]
         if status == "Reserved":
             color = "bg-danger"
+            button_text = "Cancel reservation"
+            url = f"cancelreservation?id={charger_id}&connector={connector}"
         else:
             color = "bg-success"
+            button_text = "Make reservation"
+            url = f"reserve?id={charger_id}&connector={connector}"
         items.append(
             {
                 "color": color,
                 "name": f"Connector {connector}",
                 "reverse_status": status,
-                "url": f"reserve?id={charger_id}&connector={connector}",
-                "button_text": "Reserve",
+                "url": url,
+                "button_text": button_text,
             }
         )
 
@@ -72,6 +76,18 @@ def reserve():
     args = {"charger_id": charger_id, "connector": connector}
     form = DateForm()
     return render_template("reserve.html", form=form, args=args)
+
+
+@app.route("/cancelreservation")
+def cancel_reserve():
+    charger_id = request.args.get("id", default="cp", type=str)
+    connector = request.args.get("connector", default="0", type=int)
+    json = {"id": charger_id, "connector": int(connector)}
+    url = "http://localhost:8080/cancelReservation"
+    response = requests.post(url, json=json)
+    json_data = response.json()
+    print(json_data)
+    return redirect("/charger", code=302)
 
 
 @app.route("/reserve", methods=["POST"])
