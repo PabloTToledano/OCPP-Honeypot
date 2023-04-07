@@ -73,7 +73,7 @@ class CentralSystem:
             if cp.id == id:
                 result = await cp.send_reserve_now(
                     id=connector,
-                    expiry_date_time=datetime.isoformat(expiry_date_time),
+                    expiry_date_time=expiry_date_time,
                     id_token=id_token,
                 )
                 return result.status
@@ -138,7 +138,7 @@ async def reserve(request):
     """HTTP handler for reserving a charger."""
     data = await request.json()
     csms = request.app["csms"]
-    expiry_date_time = datetime.utcnow() + timedelta(hours=1)
+    expiry_date_time = data["expDate"]
 
     try:
         result = await csms.reserve_now(

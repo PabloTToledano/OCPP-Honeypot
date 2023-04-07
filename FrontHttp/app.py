@@ -1,7 +1,8 @@
 from flask import Flask, render_template, request, send_file, redirect
 from flask_wtf import Form
-from wtforms.fields import DateField
+from wtforms.fields import DateField, TimeField
 import requests
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -67,6 +68,7 @@ def charger():
 
 class DateForm(Form):
     dt = DateField("DatePicker", format="%Y-%m-%d")
+    tp = TimeField("TimePicker")
 
 
 @app.route("/reserve")
@@ -76,6 +78,26 @@ def reserve():
     args = {"charger_id": charger_id, "connector": connector}
     form = DateForm()
     return render_template("reserve.html", form=form, args=args)
+
+
+@app.route("/reserve", methods=["POST"])
+def reserve_post():
+    charger_id = request.args.get("id", default="cp", type=str)
+    connector = request.args.get("connector", default="0", type=int)
+    form_date = request.form["dt"]
+    form_time = request.form["tp"]
+    date = datetime.strptime(form_date + " " + form_time, "%Y-%m-%d %H:%M")
+    url = "http://localhost:8080/reserve"
+    json = {
+        "id": charger_id,
+        "connector": int(connector),
+        "idToken": "12345",
+        "expDate": date.isoformat(),
+    }
+    response = requests.post(url, json=json)
+    json_data = response.json()
+    print(json_data)
+    return redirect("/charger", code=302)
 
 
 @app.route("/cancelreservation")
@@ -88,14 +110,6 @@ def cancel_reserve():
     json_data = response.json()
     print(json_data)
     return redirect("/charger", code=302)
-
-
-@app.route("/reserve", methods=["POST"])
-def reserve_post():
-    charger_id = request.args.get("id", default="cp", type=str)
-    connector = request.args.get("connector", default="0", type=str)
-    dateexp = request.form["dt"]
-    return f"{dateexp},{charger_id},{connector}", 200
 
 
 @app.route("/logo.png")

@@ -5,6 +5,8 @@
 <table>
     <tr>
         <form action="{{ url_for('reserve') }}?id={{ args.charger_id }}&connector={{ args.connector }}" method="post">
+            <td>{{ form.tp(class='timepicker') }}
+                <br>
             <td>{{ form.dt(class='datepicker') }}
                 <input type="submit" value="Make reservation" />
         </form>
