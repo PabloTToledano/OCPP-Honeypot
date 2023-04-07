@@ -52,12 +52,9 @@ class LoggerLogstash(object):
         logging.getLogger().addHandler(self.stderrLogger)
         self.logger = logging.getLogger(self.logger_name)
         self.logger.addHandler(
-            logstash.LogstashHandler(
-                self.logstash_host, self.logstash_port, version=1
-            )
+            logstash.LogstashHandler(self.logstash_host, self.logstash_port, version=1)
         )
         return self.logger
-
 
 
 class ChargePoint(cp):
@@ -166,7 +163,6 @@ class ChargePoint(cp):
         evse_id: int,
         **kwargs,
     ):
-
         return call_result.NotifyEVChargingSchedulePayload(status="Accepted")
 
     @on("MeterValues")
@@ -220,7 +216,6 @@ class ChargePoint(cp):
     def on_cleared_charging_limit(
         self, charging_limit_source: str, evse_id: int | None = None, **kwargs
     ):
-
         return call_result.ClearedChargingLimitPayload()
 
     @on("TransactionEvent")
@@ -275,16 +270,28 @@ class ChargePoint(cp):
     async def send_set_network_profile(
         self, configuration_slot: int, connection_data: dict
     ):
-
         request = call.SetNetworkProfilePayload(
             configuration_slot=configuration_slot, connection_data=connection_data
         )
         response = await self.call(request)
 
     async def send_request_reset(self, type: str, evse_id: int | None = None):
-
         request = call.ResetPayload(type=type, evse_id=evse_id)
         response = await self.call(request)
+
+    async def send_reserve_now(
+        self,
+        id: int,
+        expiry_date_time: str,
+        id_token: dict,
+        connector_type: str | None = None,
+        evse_id: int | None = None,
+        group_id_token: dict | None = None,
+    ):
+        request = call.ReserveNowPayload(
+            id=id, expiry_date_time=expiry_date_time, id_token=id_token
+        )
+        return await self.call(request)
 
     async def send_sendlocallist(
         self,
@@ -292,7 +299,6 @@ class ChargePoint(cp):
         update_type: str,
         local_authorization_list: list | None = None,
     ):
-
         request = call.SendLocalListPayload(
             version_number=version_number,
             update_type=update_type,
@@ -303,7 +309,6 @@ class ChargePoint(cp):
     async def send_get_localist(
         self,
     ):
-
         request = call.GetLocalListVersionPayload()
         response = await self.call(request)
 
@@ -374,14 +379,18 @@ class TLSCheckCert(websockets.WebSocketServerProtocol):
         super().handler_task = super().loop.create_task(super().handler())
 
 
-async def main(address: str, port: int, security_profile: int, logstash_host: str | None,logstash_port:int | None ):
-
+async def main(
+    address: str,
+    port: int,
+    security_profile: int,
+    logstash_host: str | None,
+    logstash_port: int | None,
+):
     logging.info(f"Security profile {security_profile}")
-
 
     if logstash_host is not None:
         instance = LoggerLogstash(
-        logstash_port=logstash_port, logstash_host=logstash_host, logger_name="ocpp"
+            logstash_port=logstash_port, logstash_host=logstash_host, logger_name="ocpp"
         )
         logger = instance.get()
 
@@ -427,13 +436,11 @@ async def main(address: str, port: int, security_profile: int, logstash_host: st
                 create_protocol=TLSCheckCert,
             )
 
-    
     logging.info("Server Started listening to new connections...")
     await server.wait_closed()
 
 
 if __name__ == "__main__":
-
     # load config json
     with open("/config.json") as file:
         config = json.load(file)
@@ -447,6 +454,6 @@ if __name__ == "__main__":
             config.get("port", "9000"),
             config.get("security_profile", 1),
             config.get("logstasth").get("ip"),
-            config.get("logstasth").get("port")
+            config.get("logstasth").get("port"),
         )
     )

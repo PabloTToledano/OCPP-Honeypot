@@ -46,13 +46,12 @@ class CentralSystem:
     #     for cp in self._chargers:
     #         await cp.change_configuration(key, value)
 
-    async def change_variables(self, id: str,variable_data: list ):
+    async def change_variables(self, id: str, variable_data: list):
         for cp in self._chargers:
             if cp.id == id:
                 await cp.send_set_variables(variable_data)
 
-
-    async def get_variables(self, id: str,get_variable_data: list ):
+    async def get_variables(self, id: str, get_variable_data: list):
         for cp in self._chargers:
             if cp.id == id:
                 result = await cp.send_get_variables(get_variable_data)
@@ -64,11 +63,16 @@ class CentralSystem:
             ids.append(cp.id)
         return ids
 
-    def disconnect_charger(self, id: str):
+    async def reserve_now(self, id: str, id_token: str):
         for cp, task in self._chargers.items():
             if cp.id == id:
-                task.cancel()
-                return
+                result = await cp.send_reserve_now(
+                    id=1,
+                    expiry_date_time=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
+                    + "Z",
+                    id_token=id_token,
+                )
+                return result.status
 
         raise ValueError(f"Charger {id} not connected.")
 
@@ -77,19 +81,26 @@ async def get_variables(request):
     """HTTP handler for getting the ids of all charge points."""
     data = await request.json()
     csms = request.app["csms"]
-    variable_data = datatypes.GetVariableDataType(component=datatypes.ComponentType(name="evse"),variable=datatypes.VariableType(name="all"))
-    result = await csms.get_variables(data["id"], data.get("variable_data",[variable_data]))
+    variable_data = datatypes.GetVariableDataType(
+        component=datatypes.ComponentType(name="evse"),
+        variable=datatypes.VariableType(name="all"),
+    )
+    result = await csms.get_variables(
+        data["id"], data.get("variable_data", [variable_data])
+    )
 
-    return web.Response(text=json.dumps({"result":result}))
+    return web.Response(text=json.dumps({"result": result}))
+
 
 async def set_variables(request):
     """HTTP handler for getting the ids of all charge points."""
     data = await request.json()
     csms = request.app["csms"]
     # {"attributeValue":"","component":"",variable:""}
-    await csms.set_variables(data["id"], data.get("variable_data",[]))
+    await csms.set_variables(data["id"], data.get("variable_data", []))
 
     return web.Response(text="OK")
+
 
 async def get_chargers(request):
     """HTTP handler for getting the ids of all charge points."""
@@ -98,17 +109,17 @@ async def get_chargers(request):
 
     ids = await csms.get_connected_chargers()
 
-    return web.Response(text=json.dumps({"ids":ids}))
+    return web.Response(text=json.dumps({"ids": ids}))
 
 
-async def change_config(request):
+async def home(request):
     """HTTP handler for changing configuration of all charge points."""
     # data = await request.json()
     csms = request.app["csms"]
 
     # await csms.change_configuration(data["key"], data["value"])
 
-    return web.Response(text="TEST")
+    return web.Response(text="OK")
 
 
 async def disconnect_charger(request):
@@ -145,7 +156,6 @@ async def on_connect(websocket, path, csms):
 
 
 async def create_websocket_server(csms: CentralSystem, config: dict):
-
     address = config.get("IP", "0.0.0.0")
     port = config.get("port", "9000")
     security_profile = config.get("security_profile", 1)
@@ -209,9 +219,9 @@ async def create_websocket_server(csms: CentralSystem, config: dict):
 
 async def create_http_server(csms: CentralSystem):
     app = web.Application()
-    app.add_routes([web.get("/", change_config)])
+    app.add_routes([web.get("/", home)])
     app.add_routes([web.post("/disconnect", disconnect_charger)])
-    app.add_routes([web.get("/ids", get_chargers)])
+    app.add_routes([web.get("/chargers", get_chargers)])
     app.add_routes([web.post("/variables", set_variables)])
     app.add_routes([web.get("/variables", get_variables)])
 

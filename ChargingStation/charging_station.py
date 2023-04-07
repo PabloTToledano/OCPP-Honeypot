@@ -122,10 +122,6 @@ class ChargePoint(cp):
     def on_setvariables(self, set_variable_data, **kwargs):
         # set_variable_data list of dict with contents of SetVariableDataType
         # for every variable respond with a dict of  SetVariableResultType
-        
-
-
-
         # attributeStatus: Accepted, Rejected, UnknownVariable, RebootRequired
         variable_result = []
         for variable in set_variable_data:
@@ -166,20 +162,21 @@ class ChargePoint(cp):
         # attributeStatus: Accepted, Rejected, UnknownVariable, RebootRequired
         # if status rejected then attibuteValue empty
         variable_result = []
-        logging.info(get_variable_data)
+        # Custom case to get all variables
         if len(get_variable_data) == 1 and get_variable_data[0]["variable"]["name"]=="all":
             # send all
-            for variable_name in self.occp_variables:
-                variable_data = datatypes.GetVariableDataType(component=datatypes.ComponentType(name="charger"),variable=datatypes.VariableType(name="all"))
-                variable_result.append(
-                    datatypes.GetVariableResultType(attribute_status=enums.SetVariableStatusType.accepted,component=datatypes.ComponentType(name="evse"),variable=datatypes.VariableType(name=variable_name),attribute_value=self.occp_variables[variable_name])
-                    )
+            for component_name in self.occp_variables:
+                for variable_name in self.occp_variables[component_name]:
+                    variable_data = datatypes.GetVariableDataType(component=datatypes.ComponentType(name="charger"),variable=datatypes.VariableType(name="all"))
+                    variable_result.append(
+                        datatypes.GetVariableResultType(attribute_status=enums.SetVariableStatusType.accepted,component=datatypes.ComponentType(name=component_name),variable=datatypes.VariableType(name=variable_name),attribute_value=self.occp_variables[component_name][variable_name])
+                        )
         else:
             for variable_request in get_variable_data:
                 variable_name = variable_request.get('variable',{'name': 'placeholder'}).get('name','placeholder')
                 component_name = variable_request.get('component',{'name': 'evse'}).get('name','evse')
                 variable_result.append(
-                    datatypes.GetVariableResultType(attribute_status=enums.SetVariableStatusType.accepted,component=datatypes.ComponentType(name=component_name),variable=datatypes.VariableType(name=variable_name),attribute_value=self.occp_variables[variable_name])
+                    datatypes.GetVariableResultType(attribute_status=enums.SetVariableStatusType.accepted,component=datatypes.ComponentType(name=component_name),variable=datatypes.VariableType(name=variable_name),attribute_value=self.occp_variables[component_name][variable_name])
                     )
 
         return call_result.GetVariablesPayload(get_variable_result=variable_result)
@@ -202,7 +199,7 @@ class ChargePoint(cp):
                 # usually due to invalid virustotal api key
                 pass
 
-        return call_result.DataTransferPayload(status="", data={})
+        return call_result.DataTransferPayload(status="Accepted", data={})
 
     @on("SetNetworkProfile")
     def on_set_network_profile(
@@ -279,8 +276,8 @@ class ChargePoint(cp):
         retry_interval: int | None = None,
         **kwargs,
     ):
-        # suspuestamente tiene que subir el log a la URL en log["remoteLocation"]
-        # TODO save request_id for after funtion
+        # Subir el log a la URL en log["remoteLocation"]
+        self.request_id = request_id
         return call_result.GetLogPayload(
             status="Accepted",
             filename=f"{self._unique_id_generator}-{datetime.utcnow().isoformat()}.log",
@@ -288,10 +285,10 @@ class ChargePoint(cp):
 
     @after("GetLog")
     async def after_get_log(self, **kwargs):
-        request = call.LogStatusNotificationPayload(status="Uploading", request_id=1)
+        request = call.LogStatusNotificationPayload(status="Uploading", request_id=self.request_id)
         response = await self.call(request)
         # upload a fake log file to log["remoteLocation"]
-        request = call.LogStatusNotificationPayload(status="Uploaded", request_id=1)
+        request = call.LogStatusNotificationPayload(status="Uploaded", request_id=self.request_id)
         response = await self.call(request)
 
     @on("CustomerInformation")

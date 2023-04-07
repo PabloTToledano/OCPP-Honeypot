@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+{% block content %}
+  <div class="container">
+    <div class="row">
+      {% for item in items %}
+        <div class="col-md-3">
+          <div class="card mb-3 box-shadow  text-white {{ item.color }}">
+            <div class="card-body">
+              <h5 class="card-title">{{ item.name }}</h5>
+              <p class="card-text">{{ item.reverse_status }}</p>
+              <a href="{{ item.url }}" class="btn btn-light ml-auto">View</a>
+
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+{% endblock %}

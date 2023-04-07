@@ -4,8 +4,14 @@
     "CSMS": "ws://csms1:9000/",
     "VT_API_KEY": "",
     "OCPP_variables": {
-        "BasicAuthPassword": "password",
-        "placeholder": "empty"
+        "evse": {
+            "BasicAuthPassword": "password",
+            "placeholder": "empty"
+        },
+        "powergrid": {
+            "MaxAmperage": "10"
+        }
+
     },
     "connectors": 2,
     "model": "EA Fast",
