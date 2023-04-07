@@ -58,14 +58,23 @@ class LoggerLogstash(object):
 
 
 class ChargePoint(cp):
-    vt_client = None
-    if os.getenv("VT_API_KEY"):
-        vt_client = vt.Client(os.getenv("VT_API_KEY"))
+    def __init__(self, id, connection):
+        cp.__init__(self, id, connection)
+        self.charger_station = None
+        self.vt_client = None
+        # Only create virus total client if token is found
+        try:
+            with open("/config.json") as file:
+                config = json.load(file)
+            if config.get("VT_API_KEY", "") != "":
+                vt_client = vt.Client(config.get("VT_API_KEY"))
+        except:
+            pass
 
     @on("BootNotification")
     def on_boot_notification(self, charging_station, reason, **kwargs):
-        print(charging_station)
-        print(reason)
+        logging.info(charging_station)
+        self.charger_station = charging_station
         return call_result.BootNotificationPayload(
             current_time=datetime.utcnow().isoformat(),
             interval=1000,
@@ -293,10 +302,7 @@ class ChargePoint(cp):
         )
         return await self.call(request)
 
-    async def send_reserve_cancel(
-        self,
-        reservation_id: int
-    ):
+    async def send_reserve_cancel(self, reservation_id: int):
         request = call.CancelReservationPayload(reservation_id=reservation_id)
         return await self.call(request)
 

@@ -58,10 +58,10 @@ class CentralSystem:
                 return result.get_variable_result
 
     async def get_connected_chargers(self):
-        ids = []
+        chargers = {}
         for cp in self._chargers:
-            ids.append(cp.id)
-        return ids
+            chargers[cp.id] = cp.charger_station
+        return chargers
 
     async def reserve_now(
         self, id: str, id_token: dict, expiry_date_time: datetime, connector: int = 1
@@ -116,9 +116,9 @@ async def get_chargers(request):
     # data = await request.json()
     csms = request.app["csms"]
 
-    ids = await csms.get_connected_chargers()
+    chargers = await csms.get_connected_chargers()
 
-    return web.Response(text=json.dumps({"ids": ids}))
+    return web.Response(text=json.dumps(chargers))
 
 
 async def home(request):
