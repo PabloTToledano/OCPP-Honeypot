@@ -60,7 +60,10 @@ class CentralSystem:
     async def get_connected_chargers(self):
         chargers = {}
         for cp in self._chargers:
-            chargers[cp.id] = cp.charger_station
+            chargers[cp.id] = {
+                "ChargerStation": cp.charger_station,
+                "connectors": cp.connectors,
+            }
         return chargers
 
     async def reserve_now(

@@ -80,18 +80,30 @@ class ChargePoint(cp):
             await self.call(request)
             await asyncio.sleep(interval)
 
+    async def send_status_notification(self):
+        for index in range(len(self.connectors)):
+            if self.reserved[index]:
+                connector_status = "Reserved"
+            else:
+                connector_status = "Available"
+            request = call.StatusNotificationPayload(
+                timestamp=datetime.isoformat(datetime.utcnow()),
+                connector_status=connector_status,
+                evse_id=1,
+                connector_id=index,
+            )
+            await self.call(request)
+
     async def send_boot_notification(self):
         request = call.BootNotificationPayload(
-            charging_station={
-                "model": self.model,
-                "vendor_name": self.vendor,
-            },
+            charging_station={"model": self.model, "vendor_name": self.vendor},
             reason="PowerUp",
         )
         try:
             response = await self.call(request)
             if response.status == "Accepted":
-                print("Connected to central system.")
+                # send connectors status
+                await self.send_status_notification()
                 await self.send_heartbeat(response.interval)
         except Exception as e:
             logging.error(e)
@@ -394,9 +406,14 @@ class ChargePoint(cp):
             else:
                 self.reserved[id] = True
                 self.reserved_exp[id] = datetime.fromisoformat(expiry_date_time)
+
                 return call_result.ReserveNowPayload(status="Accepted")
         except:
             return call_result.ReserveNowPayload(status="Rejected")
+
+    @after("ReserveNow")
+    async def after_reserve_now(self, **kwargs):
+        await self.send_status_notification()
 
     @on("CancelReservation")
     def on_cancel_reservation(
@@ -417,13 +434,7 @@ class ChargePoint(cp):
 
     @after("CancelReservation")
     async def after_cancel_reservation(self, **kwargs):
-        request = call.StatusNotificationPayload(
-            timestamp=datetime.isoformat(datetime.utcnow()),
-            connector_status="Available",
-            evse_id=0,
-            connector_id=0,
-        )
-        response = await self.call(request)
+        await self.send_status_notification()
 
     @on("CostUpdated")
     def on_cost_updated(

@@ -61,6 +61,7 @@ class ChargePoint(cp):
     def __init__(self, id, connection):
         cp.__init__(self, id, connection)
         self.charger_station = None
+        self.connectors = {}
         self.vt_client = None
         # Only create virus total client if token is found
         try:
@@ -113,6 +114,7 @@ class ChargePoint(cp):
         **kwargs,
     ):
         #  A connector status changed, the Charging Station sends a StatusNotificationRequest to the CSMS to inform the CSMS about the new status.
+        self.connectors[str(connector_id)] = connector_status
         return call_result.StatusNotificationPayload()
 
     @on("NotifyDisplayMessages")
