@@ -1,4 +1,6 @@
 from flask import Flask, render_template, request, send_file
+from flask_wtf import Form
+from wtforms.fields import DateField
 import requests
 
 app = Flask(__name__)
@@ -51,12 +53,33 @@ def charger():
                 "color": color,
                 "name": f"Connector {connector}",
                 "reverse_status": status,
-                "url": "reserve",
+                "url": f"reserve?id={charger_id}&connector={connector}",
                 "button_text": "Reserve",
             }
         )
 
     return render_template("home.html", items=items)
+
+
+class DateForm(Form):
+    dt = DateField("DatePicker", format="%Y-%m-%d")
+
+
+@app.route("/reserve")
+def reserve():
+    charger_id = request.args.get("id", default="cp", type=str)
+    connector = request.args.get("connector", default="0", type=str)
+    args = {"charger_id": charger_id, "connector": connector}
+    form = DateForm()
+    return render_template("reserve.html", form=form, args=args)
+
+
+@app.route("/reserve", methods=["POST"])
+def reserve_post():
+    charger_id = request.args.get("id", default="cp", type=str)
+    connector = request.args.get("connector", default="0", type=str)
+    dateexp = request.form["dt"]
+    return f"{dateexp},{charger_id},{connector}", 200
 
 
 @app.route("/logo.png")
