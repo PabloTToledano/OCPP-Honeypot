@@ -62,6 +62,7 @@ class ChargePoint(cp):
         cp.__init__(self, id, connection)
         self.charger_station = None
         self.connectors = {}
+        self.display_message = []
         self.vt_client = None
         # Only create virus total client if token is found
         try:
@@ -118,7 +119,14 @@ class ChargePoint(cp):
         return call_result.StatusNotificationPayload()
 
     @on("NotifyDisplayMessages")
-    def on_notify_display_messages(self, **kwargs):
+    def on_notify_display_messages(
+        self,
+        request_id: int,
+        message_info: list | None = None,
+        tbc: bool | None = None,
+        **kwargs,
+    ):
+        self.display_message = message_info
         return call_result.NotifyDisplayMessagesPayload()
 
     @on("LogStatusNotification")
@@ -327,15 +335,17 @@ class ChargePoint(cp):
         request = call.GetLocalListVersionPayload()
         response = await self.call(request)
 
-    async def send_set_display_messages(self, priority, message):
-        request = call.SetDisplayMessagePayload(
-            message={
-                "id": random.randint(0, 9999),
-                "priority": priority,
-                "message": message,
-            },
+    async def send_set_display_messages(self, message):
+        request = call.SetDisplayMessagePayload(message=message)
+        return await self.call(request)
+
+    async def send_get_display_messages(
+        self, request_id, id=None, priority=None, state=None
+    ):
+        request = call.GetDisplayMessagesPayload(
+            request_id, id=id, priority=priority, state=state
         )
-        response = await self.call(request)
+        return await self.call(request)
 
 
 async def on_connect(websocket, path):

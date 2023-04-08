@@ -59,6 +59,7 @@ class ChargePoint(cp):
             config
         )
         self.occp_variables = config.get("OCPP_variables", {})
+        self.display_message = []
         self.vt_client = None
         # Only create virus total client if token is found
         if config.get("VT_API_KEY", "") != "":
@@ -271,10 +272,12 @@ class ChargePoint(cp):
         return call_result.GetLocalListVersionPayload(version_number=2)
 
     # O.DisplayMessage
-    @on("SetDisplayMessages")
+    @on("SetDisplayMessage")
     def on_set_display_messages(self, message: dict, **kwargs):
         # TODO save the message
         # this is for set and replace
+
+        self.display_message.append(message)
         return call_result.SetDisplayMessagePayload(status="Accepted")
 
     @on("GetDisplayMessages")
@@ -288,15 +291,16 @@ class ChargePoint(cp):
     ):
         # TODO get messages from DB
         # TODO send NotifyDisplayMessagesRequest
+        self.request_id = request_id
         return call_result.GetDisplayMessagesPayload(status="Accepted")
 
     @after("GetDisplayMessages")
     async def after_get_display_messages(self, **kwargs):
         # TODO see how to store the request_id and sent display message
         request = call.NotifyDisplayMessagesPayload(
-            request_id=1, message_info=[], tbc=False
+            request_id=self.request_id, message_info=self.display_message
         )
-        response = await self.call(request)
+        await self.call(request)
 
     @on("ClearDisplayMessage")
     def on_clear_display_messages(self, id: int, **kwargs):

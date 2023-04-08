@@ -63,6 +63,7 @@ class CentralSystem:
             chargers[cp.id] = {
                 "ChargerStation": cp.charger_station,
                 "connectors": cp.connectors,
+                "displayMesagges": cp.display_message,
             }
         return chargers
 
@@ -88,6 +89,20 @@ class CentralSystem:
 
         raise ValueError(f"Charger {id} not connected.")
 
+    async def set_display_message(self, id: str, message):
+        for cp, task in self._chargers.items():
+            if cp.id == id:
+                result = await cp.send_set_display_messages(message)
+                return result.status
+        raise ValueError(f"Charger {id} not connected.")
+
+    async def get_display_message(self, id: str):
+        for cp, task in self._chargers.items():
+            if cp.id == id:
+                result = await cp.send_get_display_messages(1)
+                return result.status
+        raise ValueError(f"Charger {id} not connected.")
+
 
 async def get_variables(request):
     """HTTP handler for getting the ids of all charge points."""
@@ -111,6 +126,31 @@ async def set_variables(request):
     # {"attributeValue":"","component":"",variable:""}
     await csms.set_variables(data["id"], data.get("variable_data", []))
 
+    return web.Response(text="OK")
+
+
+async def set_display_message(request):
+    """HTTP handler for getting the ids of all charge points."""
+    data = await request.json()
+    csms = request.app["csms"]
+    # id=data["id"], msg=data["msg"], msg_id=data["msgId"]
+    message = datatypes.MessageInfoType(
+        id=data["msgId"],
+        priority=enums.MessagePriorityType.always_front,
+        message=datatypes.MessageContentType(
+            format=enums.MessageFormatType.utf8, content=data["msg"]
+        ),
+    )
+    await csms.set_display_message(data["id"], message)
+    return web.Response(text="OK")
+
+
+async def get_display_message(request):
+    """HTTP handler for getting the ids of all charge points."""
+    data = await request.json()
+    csms = request.app["csms"]
+    # id=data["id"], msg=data["msg"], msg_id=data["msgId"]
+    await csms.get_display_message(data["id"])
     return web.Response(text="OK")
 
 
@@ -260,6 +300,8 @@ async def create_http_server(csms: CentralSystem):
     app.add_routes([web.get("/chargers", get_chargers)])
     app.add_routes([web.post("/variables", set_variables)])
     app.add_routes([web.get("/variables", get_variables)])
+    app.add_routes([web.post("/displayMessage", set_display_message)])
+    app.add_routes([web.get("/displayMessage", get_display_message)])
 
     # Put CSMS in app so it can be accessed from request handlers.
     # https://docs.aiohttp.org/en/stable/faq.html#where-do-i-put-my-database-connection-so-handlers-can-access-it
