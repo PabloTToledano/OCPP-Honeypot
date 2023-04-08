@@ -1,0 +1,37 @@
+{% extends "layout.html" %}
+
+{% block content %}
+</br>
+<h1>DisplayMessages</h1>
+<div class="content" style="text-align: center">
+
+    <div class="form">
+        <form action="/displaymessages?id={{charger.id}}&lastid={{charger.lastid}}" method="POST">
+            <input type="text" name="content" id="content" />
+            <input class="btn btn-primary" type="submit" value="Add Display Message" />
+        </form>
+    </div>
+
+
+    {% if msgs|length < 1 %} <h4 style="text-align: center">There are no Display Messages</h4>
+        {% else %}
+        <div class="container py-5 h-100">
+            <table class="table table-bordered">
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">DisplayMessage</th>
+                </tr>
+                {% for msg in msgs %}
+                <tr>
+                    <td>{{ msg.id|safe }}</td>
+                    <td>{{ msg.message.content|safe }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+
+        {% endif %}
+
+
+</div>
+{% endblock %}

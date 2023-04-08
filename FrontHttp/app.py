@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_file, redirect, url_for
+from flask import Flask, render_template, request, send_file, redirect, url_for, flash
 from flask_wtf import Form
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import login_required, LoginManager, current_user
@@ -141,18 +141,89 @@ def reserve_post():
     connector = request.args.get("connector", default="0", type=int)
     form_date = request.form["dt"]
     form_time = request.form["tp"]
-    date = datetime.strptime(form_date + " " + form_time, "%Y-%m-%d %H:%M")
-    url = "http://localhost:8080/reserve"
-    json = {
-        "id": charger_id,
-        "connector": int(connector),
-        "idToken": "12345",
-        "expDate": date.isoformat(),
-    }
-    response = requests.post(url, json=json)
+    try:
+        date = datetime.strptime(form_date + " " + form_time, "%Y-%m-%d %H:%M")
+        url = "http://localhost:8080/reserve"
+        json = {
+            "id": charger_id,
+            "connector": int(connector),
+            "idToken": "12345",
+            "expDate": date.isoformat(),
+        }
+        response = requests.post(url, json=json)
+        json_data = response.json()
+        print(json_data)
+        return redirect(f"/charger?id={charger_id}", code=302)
+    except Exception as e:
+        flash("Please enter a date")
+        return redirect(url_for("reserve"))
+
+
+@app.route("/displaymessages")
+@login_required
+def display_messages():
+    charger_id = request.args.get("id", type=str)
+    url = "http://localhost:8080/displayMessage"
+    json = {"id": charger_id}
+    response = requests.get(url, json=json)
+
+    url = "http://localhost:8080/chargers"
+    response = requests.get(url)
     json_data = response.json()
-    print(json_data)
-    return redirect(f"/charger?id={charger_id}", code=302)
+
+    display_messages = json_data[charger_id]["displayMesagges"]
+    charger = {
+        "id": charger_id,
+        "name": json_data[charger_id]["ChargerStation"]["vendor_name"],
+        "model": json_data[charger_id]["ChargerStation"]["model"],
+        "lastid": display_messages[-1]["id"],
+    }
+    return render_template(
+        "displaymessages.html",
+        msgs=display_messages,
+        charger=charger,
+        current_user=current_user,
+    )
+
+
+@app.route("/variables")
+@login_required
+def variables():
+    charger_id = request.args.get("id", type=str)
+    url = "http://localhost:8080/variables"
+    json = {"id": charger_id}
+    response = requests.get(url, json=json)
+    json_data = response.json()
+    variables = json_data["result"]
+    print(variables)
+    url = "http://localhost:8080/chargers"
+    response = requests.get(url)
+    json_data = response.json()
+
+    charger = {
+        "id": charger_id,
+        "name": json_data[charger_id]["ChargerStation"]["vendor_name"],
+        "model": json_data[charger_id]["ChargerStation"]["model"],
+    }
+
+    return render_template(
+        "variables.html",
+        msgs=variables,
+        charger=charger,
+        current_user=current_user,
+    )
+
+
+@app.route("/displaymessages", methods=["POST"])
+@login_required
+def display_messages_post():
+    charger_id = request.args.get("id", type=str)
+    last_id = request.args.get("lastid", type=int)
+    msg = form_date = request.form["content"]
+    url = "http://localhost:8080/displayMessage"
+    json = {"id": charger_id, "msg": msg, "msgId": last_id + 1}
+    response = requests.post(url, json=json)
+    return redirect(f"/displaymessages?id={charger_id}")
 
 
 @app.route("/cancelreservation")
@@ -163,7 +234,6 @@ def cancel_reserve():
     url = "http://localhost:8080/cancelReservation"
     response = requests.post(url, json=json)
     json_data = response.json()
-    print(json_data)
     return redirect(f"/charger?id={charger_id}", code=302)
 
 

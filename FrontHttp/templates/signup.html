@@ -45,9 +45,9 @@
                     <div class="card-body p-5 text-center">
                         {% with messages = get_flashed_messages() %}
                         {% if messages %}
-                        <div class="notification is-danger">
+                        <div class="alert alert-danger" role="alert">
                             {{ messages[0] }}. Go to the <a href="{{ url_for('auth.login') }}"
-                                class="text-white-50 fw-bold">login
+                                class="text-red-50 fw-bold">login
                                 page</a>
                         </div>
                         {% endif %}
