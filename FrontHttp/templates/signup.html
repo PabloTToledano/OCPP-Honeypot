@@ -2,37 +2,40 @@
 
 {% block content %}
 <!-- <div class="column is-4 is-offset-4">
-    <h3 class="title">Login</h3>
+    <h3 class="title">Sign Up</h3>
     <div class="box">
         {% with messages = get_flashed_messages() %}
         {% if messages %}
         <div class="notification is-danger">
-            {{ messages[0] }}
+            {{ messages[0] }}. Go to <a href="{{ url_for('auth.login') }}">login page</a>.
         </div>
         {% endif %}
         {% endwith %}
-        <form method="POST" action="/login">
+        <form method="POST" action="/signup">
             <div class="field">
                 <div class="control">
-                    <input class="input is-large" type="email" name="email" placeholder="Your Email" autofocus="">
+                    <input class="input is-large" type="email" name="email" placeholder="Email" autofocus="">
                 </div>
             </div>
 
             <div class="field">
                 <div class="control">
-                    <input class="input is-large" type="password" name="password" placeholder="Your Password">
+                    <input class="input is-large" type="text" name="name" placeholder="Name" autofocus="">
                 </div>
             </div>
+
             <div class="field">
-                <label class="checkbox">
-                    <input type="checkbox" name="remember">
-                    Remember me
-                </label>
+                <div class="control">
+                    <input class="input is-large" type="password" name="password" placeholder="Password">
+                </div>
             </div>
-            <button class="button is-block is-info is-large is-fullwidth">Login</button>
+
+            <button class="button is-block is-info is-large is-fullwidth">Sign Up</button>
         </form>
     </div>
 </div> -->
+
+
 
 <section class="vh-10 gradient-custom">
     <div class="container py-5 h-100">
@@ -43,14 +46,16 @@
                         {% with messages = get_flashed_messages() %}
                         {% if messages %}
                         <div class="notification is-danger">
-                            {{ messages[0] }}
+                            {{ messages[0] }}. Go to the <a href="{{ url_for('auth.login') }}"
+                                class="text-white-50 fw-bold">login
+                                page</a>
                         </div>
                         {% endif %}
                         {% endwith %}
                         <div class="mb-md-5 mt-md-4 pb-5">
-                            <form method="POST" action="/login">
-                                <h2 class="fw-bold mb-2 text-uppercase">Login</h2>
-                                <p class="text-white-50 mb-5">Please enter your login and password!</p>
+                            <form method="POST" action="/signup">
+                                <h2 class="fw-bold mb-2 text-uppercase">Signup</h2>
+                                <p class="text-white-50 mb-5">Create a new user</p>
 
                                 <div class="form-outline form-white mb-4">
                                     <input type="email" id="email" class="form-control form-control-lg" name="email"
@@ -58,18 +63,17 @@
                                 </div>
 
                                 <div class="form-outline form-white mb-4">
+                                    <input type="text" id="name" class="form-control form-control-lg" name="name"
+                                        placeholder="Your username" autofocus="" />
+                                </div>
+
+                                <div class="form-outline form-white mb-4">
                                     <input type="password" id="password" class="form-control form-control-lg"
                                         name="password" placeholder="Your Password" />
                                 </div>
 
-                                <button class=" btn btn-outline-light btn-lg px-5" type="submit">Login</button>
+                                <button class=" btn btn-outline-light btn-lg px-5" type="submit">Signup</button>
                             </form>
-                        </div>
-
-                        <div>
-                            <p class="mb-0">Don't have an account? <a href="/signup" class="text-white-50 fw-bold">Sign
-                                    Up</a>
-                            </p>
                         </div>
 
                     </div>
@@ -78,4 +82,6 @@
         </div>
     </div>
 </section>
+
+
 {% endblock %}

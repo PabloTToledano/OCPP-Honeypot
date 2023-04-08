@@ -8,6 +8,7 @@ import json
 import websockets
 import logstash
 import ssl
+import uuid
 from datetime import datetime
 
 from ocpp.routing import on, after
@@ -546,9 +547,10 @@ async def main():
 
         match security_profile:
             case 1:
+                id = uuid.uuid4()
                 # No SSL
                 # Security profile 1
-                uri = f"{config.get('CSMS')[:5]}{config.get('username')}:{config.get('password')}@{config.get('CSMS')[5:]}{config.get('ID')}"
+                uri = f"{config.get('CSMS')[:5]}{config.get('username')}:{config.get('password')}@{config.get('CSMS')[5:]}{config.get('ID',id)}"
                 logging.info(uri)
                 async with websockets.connect(
                     uri,
@@ -560,7 +562,7 @@ async def main():
                         charge_point.start(), charge_point.send_boot_notification()
                     )
             case 2:
-                uri = f"{config.get('CSMS')[:5]}{config.get('username')}:{config.get('password')}@{config.get('CSMS')[5:]}{config.get('ID')}"
+                uri = f"{config.get('CSMS')[:5]}{config.get('username')}:{config.get('password')}@{config.get('CSMS')[5:]}{config.get('ID',id)}"
                 logging.info(uri)
                 async with websockets.connect(
                     uri,
@@ -574,7 +576,7 @@ async def main():
                     )
             case 3:
                 async with websockets.connect(
-                    config.get("CSMS"),
+                    f"{config.get('CSMS')}/{id}",
                     subprotocols=["ocpp2.0.1", "ocpp2.0"],
                     ssl=ssl_context,
                 ) as ws:

@@ -1,25 +1,69 @@
-from flask import Flask, render_template, request, send_file, redirect
+from flask import Flask, render_template, request, send_file, redirect, url_for
 from flask_wtf import Form
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import login_required, LoginManager, current_user
 from wtforms.fields import DateField, TimeField
 import requests
 from datetime import datetime
+from auth import User, db
 
-app = Flask(__name__)
+
+def create_app():
+    app = Flask(__name__)
+
+    # Secret bad on purpose
+    app.config["SECRET_KEY"] = "password"
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///db.sqlite"
+    db.init_app(app)
+
+    # blueprint for auth routes in our app
+    from auth import auth as auth_blueprint
+
+    app.register_blueprint(auth_blueprint)
+
+    login_manager = LoginManager()
+    login_manager.login_view = "auth.login"
+    login_manager.init_app(app)
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        # since the user_id is just the primary key of our user table, use it in the query for the user
+        return User.query.get(int(user_id))
+
+    return app
+
+
+app = create_app()
 
 
 @app.route("/")
-def index():
+@login_required
+def home():
+    return redirect(url_for("auth.login"))
+
+
+@app.route("/profile")
+@login_required
+def profile():
+    return render_template("profile.html", current_user=current_user)
+
+
+@app.route("/chargers")
+@login_required
+def chargers():
     url = "http://localhost:8080/chargers"
     response = requests.get(url)
     json_data = response.json()
     items = []
     for charger in json_data:
-        status = "Free"
+        status = "Available"
+        reserved_connectors = 0
         for connector in json_data[charger].get("connectors"):
-            if connector == "Reserved":
-                status = "Reserved"
-        if status == "Reserved":
+            if json_data[charger]["connectors"][connector] == "Reserved":
+                reserved_connectors = reserved_connectors + 1
+        if reserved_connectors == len(json_data[charger]["connectors"]):
             color = "bg-danger"
+            status = "Reserved"
         else:
             color = "bg-success"
 
@@ -32,7 +76,7 @@ def index():
                 "button_text": "View",
             }
         )
-    return render_template("home.html", items=items)
+    return render_template("home.html", items=items, current_user=current_user)
 
 
 @app.route("/charger")
@@ -41,8 +85,14 @@ def charger():
     response = requests.get(url)
     json_data = response.json()
     items = []
-    status = "Free"
+
     charger_id = request.args.get("id", default="cp", type=str)
+    charger = {
+        "id": charger_id,
+        "name": json_data[charger_id]["ChargerStation"]["vendor_name"],
+        "model": json_data[charger_id]["ChargerStation"]["model"],
+    }
+
     for connector in json_data[charger_id].get("connectors"):
         status = json_data[charger_id]["connectors"][connector]
         if status == "Reserved":
@@ -63,7 +113,9 @@ def charger():
             }
         )
 
-    return render_template("home.html", items=items)
+    return render_template(
+        "charger.html", items=items, charger=charger, current_user=current_user
+    )
 
 
 class DateForm(Form):
@@ -73,16 +125,19 @@ class DateForm(Form):
 
 @app.route("/reserve")
 def reserve():
-    charger_id = request.args.get("id", default="cp", type=str)
+    charger_id = request.args.get("id", type=str)
+    print(charger_id)
     connector = request.args.get("connector", default="0", type=str)
     args = {"charger_id": charger_id, "connector": connector}
     form = DateForm()
-    return render_template("reserve.html", form=form, args=args)
+    return render_template(
+        "reserve.html", form=form, args=args, current_user=current_user
+    )
 
 
 @app.route("/reserve", methods=["POST"])
 def reserve_post():
-    charger_id = request.args.get("id", default="cp", type=str)
+    charger_id = request.args.get("id", type=str)
     connector = request.args.get("connector", default="0", type=int)
     form_date = request.form["dt"]
     form_time = request.form["tp"]
@@ -97,7 +152,7 @@ def reserve_post():
     response = requests.post(url, json=json)
     json_data = response.json()
     print(json_data)
-    return redirect("/charger", code=302)
+    return redirect(f"/charger?id={charger_id}", code=302)
 
 
 @app.route("/cancelreservation")
@@ -109,7 +164,7 @@ def cancel_reserve():
     response = requests.post(url, json=json)
     json_data = response.json()
     print(json_data)
-    return redirect("/charger", code=302)
+    return redirect(f"/charger?id={charger_id}", code=302)
 
 
 @app.route("/logo.png")
