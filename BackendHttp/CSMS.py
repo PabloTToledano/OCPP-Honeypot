@@ -351,6 +351,16 @@ class ChargePoint(cp):
         )
         return await self.call(request)
 
+    async def send_update_firmware(
+        self,
+        request_id: int,
+        firmware,
+        retries: int | None = None,
+        retry_interval: int | None = None,
+    ):
+        request = call.UpdateFirmwarePayload(request_id, firmware=firmware)
+        return await self.call(request)
+
 
 async def on_connect(websocket, path):
     """For every new charge point that connects, create a ChargePoint

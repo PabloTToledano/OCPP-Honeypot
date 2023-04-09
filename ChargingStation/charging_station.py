@@ -9,6 +9,7 @@ import websockets
 import logstash
 import ssl
 import uuid
+import time
 from datetime import datetime
 
 from ocpp.routing import on, after
@@ -468,16 +469,35 @@ class ChargePoint(cp):
         retry_interval: int | None = None,
         **kwargs,
     ):
+        datatypes.FirmwareType()
         # send firmware uri to virustotal for analysis
         if self.vt_client:
             try:
                 url_id = vt.url_id(firmware.get("location"))
                 url = self.client.get_object("/urls/{}", url_id)
-                LOGGER.info(f"VirusTotal analysis: {url.last_analysis_stats}")
+                LOGGER.info(
+                    f"VirusTotal analysis: {url.last_analysis_stats}",
+                    extra={"url": "firmware.get('location')"},
+                )
             except Exception as e:
                 # usually due to invalid virustotal api key
                 pass
         return call_result.UpdateFirmwarePayload("Accepted")
+
+    async def send_firmware_status_notification(self, status):
+        request = call.FirmwareStatusNotificationPayload(status=status)
+        await self.call(request)
+
+    @after("UpdateFirmware")
+    async def after_ipdate_firmware(self, status):
+        # send FirmwareStatusNotificationRequest Status = Downloaded,Installing,Installed
+        time.sleep(random.randint(4, 20))
+        # fake download, installing and installed notifications
+        await self.send_firmware_status_notification("Downloaded")
+        time.sleep(random.randint(1, 3))
+        await self.send_firmware_status_notification("Installing")
+        time.sleep(random.randint(4, 20))
+        await self.send_firmware_status_notification("Installed")
 
     @on("RequestStartTransaction")
     def on_request_start_transaction(
