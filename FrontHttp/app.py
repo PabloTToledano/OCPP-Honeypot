@@ -172,11 +172,15 @@ def display_messages():
     json_data = response.json()
 
     display_messages = json_data[charger_id]["displayMesagges"]
+    try:
+        last_id = display_messages[-1]["id"]
+    except Exception as e:
+        last_id = 0
     charger = {
         "id": charger_id,
         "name": json_data[charger_id]["ChargerStation"]["vendor_name"],
         "model": json_data[charger_id]["ChargerStation"]["model"],
-        "lastid": display_messages[-1]["id"],
+        "lastid": last_id,
     }
     return render_template(
         "displaymessages.html",

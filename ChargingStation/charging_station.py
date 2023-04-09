@@ -274,10 +274,15 @@ class ChargePoint(cp):
     # O.DisplayMessage
     @on("SetDisplayMessage")
     def on_set_display_messages(self, message: dict, **kwargs):
-        # TODO save the message
         # this is for set and replace
 
-        self.display_message.append(message)
+        if len(self.display_message) < int(message["id"]):
+            # new msg
+            self.display_message.append(message)
+        else:
+            # edit
+            index = int(message["id"]) - 1
+            self.display_message[index] = message
         return call_result.SetDisplayMessagePayload(status="Accepted")
 
     @on("GetDisplayMessages")

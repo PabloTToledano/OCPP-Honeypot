@@ -2,36 +2,52 @@
 
 {% block content %}
 </br>
-<h1>DisplayMessages</h1>
-<div class="content" style="text-align: center">
+<div class="container">
+    <h1>DisplayMessages</h1>
+    <div class="content" style="text-align: center">
 
-    <div class="form">
-        <form action="/displaymessages?id={{charger.id}}&lastid={{charger.lastid}}" method="POST">
-            <input type="text" name="content" id="content" />
-            <input class="btn btn-primary" type="submit" value="Add Display Message" />
-        </form>
-    </div>
+        <div class="container py-2 h-100 px-1000">
+            <div class="form-group mb-2">
+                <div class="form-group mx-sm-3 mb-2">
+                    <form action="/displaymessages?id={{charger.id}}&lastid={{charger.lastid}}" method="POST">
+                        <div class="input-group mb-3 ">
+                            <input class="form-control" type="text" name="content" id="content" />
 
+                            <button class="btn btn-primary" type="submit">Add Display Message</button>
+                        </div>
+                    </form>
 
-    {% if msgs|length < 1 %} <h4 style="text-align: center">There are no Display Messages</h4>
-        {% else %}
-        <div class="container py-5 h-100">
-            <table class="table table-bordered">
-                <tr>
-                    <th scope="col">ID</th>
-                    <th scope="col">DisplayMessage</th>
-                </tr>
-                {% for msg in msgs %}
-                <tr>
-                    <td>{{ msg.id|safe }}</td>
-                    <td>{{ msg.message.content|safe }}</td>
-                </tr>
-                {% endfor %}
-            </table>
+                </div>
+            </div>
         </div>
 
-        {% endif %}
 
+
+        {% if msgs|length < 1 %} <h4 style="text-align: center">There are no Display Messages</h4>
+            {% else %}
+            <div class="container py-2 h-100">
+                <div class="table-responsive-md">
+                    <table class="table table-hover table-bordered">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th scope="col">ID</th>
+                                <th scope="col">DisplayMessage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for msg in msgs %}
+                            <tr>
+                                <td>{{ msg.id|safe }}</td>
+                                <td>{{ msg.message.content|safe }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {% endif %}
+    </div>
 
 </div>
 {% endblock %}
