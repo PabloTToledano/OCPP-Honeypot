@@ -12,7 +12,6 @@
                     <form action="/displaymessages?id={{charger.id}}&lastid={{charger.lastid}}" method="POST">
                         <div class="input-group mb-3 ">
                             <input class="form-control" type="text" name="content" id="content" />
-
                             <button class="btn btn-primary" type="submit">Add Display Message</button>
                         </div>
                     </form>
@@ -27,11 +26,12 @@
             {% else %}
             <div class="container py-2 h-100">
                 <div class="table-responsive-md">
-                    <table class="table table-hover table-bordered">
+                    <table class="table table-bordered">
                         <thead class="thead-dark">
                             <tr>
                                 <th scope="col">ID</th>
                                 <th scope="col">DisplayMessage</th>
+                                <th scope="col">Edit</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -39,6 +39,8 @@
                             <tr>
                                 <td>{{ msg.id|safe }}</td>
                                 <td>{{ msg.message.content|safe }}</td>
+                                <td><a href="/updatedisplaymessage?id={{ charger.id }}&msgId={{ msg.id }}"
+                                        class="btn btn-primary ml-auto">Edit</a></td>
                             </tr>
                             {% endfor %}
                         </tbody>

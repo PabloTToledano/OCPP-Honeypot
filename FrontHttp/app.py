@@ -230,6 +230,49 @@ def display_messages_post():
     return redirect(f"/displaymessages?id={charger_id}")
 
 
+@app.route("/updatedisplaymessage", methods=["GET"])
+@login_required
+def display_messages_edit():
+    charger_id = request.args.get("id", type=str)
+    msg_id = request.args.get("msgId", type=int)
+
+    # get old displaymessage
+
+    charger_id = request.args.get("id", type=str)
+    url = "http://localhost:8080/displayMessage"
+    json = {"id": charger_id}
+    response = requests.get(url, json=json)
+
+    url = "http://localhost:8080/chargers"
+    response = requests.get(url)
+    json_data = response.json()
+
+    display_messages = json_data[charger_id]["displayMesagges"]
+
+    old_msg = {"id": msg_id, "content": display_messages[msg_id - 1]}
+    charger = {
+        "id": charger_id,
+    }
+    return render_template(
+        "updatedisplaymessage.html",
+        msg=old_msg,
+        charger=charger,
+        current_user=current_user,
+    )
+
+
+@app.route("/updatedisplaymessage", methods=["POST"])
+@login_required
+def display_messages_edit_post():
+    charger_id = request.args.get("id", type=str)
+    msg_id = request.args.get("msgId", type=int)
+    msg = form_date = request.form["content"]
+    url = "http://localhost:8080/displayMessage"
+    json = {"id": charger_id, "msg": msg, "msgId": msg_id}
+    response = requests.post(url, json=json)
+    return redirect(f"/displaymessages?id={charger_id}")
+
+
 @app.route("/cancelreservation")
 def cancel_reserve():
     charger_id = request.args.get("id", default="cp", type=str)
