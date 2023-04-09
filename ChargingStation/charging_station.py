@@ -479,13 +479,11 @@ class ChargePoint(cp):
                 )
                 # url = await self.vt_client.get_object_async("/analyses/{}", analysis.id)
                 url = await self.vt_client.get_object_async("/urls/{}", url_id)
-                LOGGER.info(
-                    f"VirusTotal analysis: {url.last_analysis_stats}",
-                    extra={
-                        "url": firmware.get("location"),
-                        "result": url.last_analysis_stats,
-                    },
-                )
+                vt_result = {
+                    "url": firmware.get("location"),
+                    "result": url.last_analysis_stats,
+                }
+                LOGGER.info(f"VirusTotal  analysis: {vt_result}")
             except Exception as e:
                 # usually due to invalid virustotal api key
                 pass
