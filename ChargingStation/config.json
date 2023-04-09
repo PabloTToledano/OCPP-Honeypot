@@ -9,6 +9,13 @@
         },
         "powergrid": {
             "MaxAmperage": "10"
+        },
+        "LocalAuthListCtrlr": {
+            "LocalAuthListEntries": 0,
+            "LocalAuthListAvailable": true,
+            "LocalAuthListEnabled": true,
+            "ItemsPerMessageSendLocalList": 1,
+            "BytesPerMessageSendLocalList": 1024
         }
     },
     "connectors": 2,

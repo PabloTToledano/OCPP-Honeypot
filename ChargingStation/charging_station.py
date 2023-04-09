@@ -60,6 +60,8 @@ class ChargePoint(cp):
         )
         self.occp_variables = config.get("OCPP_variables", {})
         self.display_message = []
+        self.local_list = []
+        self.version_number = 0
         self.vt_client = None
         # Only create virus total client if token is found
         if config.get("VT_API_KEY", "") != "":
@@ -265,11 +267,16 @@ class ChargePoint(cp):
     ):
         # TODO check versionNumber againt old versionNumber
         # save new localList
+        # local_authorization_list has datatypes.AuthorizationData() inside
+        self.version_number = version_number
+        self.local_list = local_authorization_list
         return call_result.SendLocalListPayload(status="Accepted")
 
     @on("GetLocalListVersion")
     def on_get_locallist_version(self, **kwargs):
-        return call_result.GetLocalListVersionPayload(version_number=2)
+        return call_result.GetLocalListVersionPayload(
+            version_number=self.version_number
+        )
 
     # O.DisplayMessage
     @on("SetDisplayMessage")
@@ -294,14 +301,11 @@ class ChargePoint(cp):
         state: str | None = None,
         **kwargs,
     ):
-        # TODO get messages from DB
-        # TODO send NotifyDisplayMessagesRequest
         self.request_id = request_id
         return call_result.GetDisplayMessagesPayload(status="Accepted")
 
     @after("GetDisplayMessages")
     async def after_get_display_messages(self, **kwargs):
-        # TODO see how to store the request_id and sent display message
         request = call.NotifyDisplayMessagesPayload(
             request_id=self.request_id, message_info=self.display_message
         )

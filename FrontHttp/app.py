@@ -1,11 +1,37 @@
-from flask import Flask, render_template, request, send_file, redirect, url_for, flash
+from flask import (
+    Flask,
+    render_template,
+    request,
+    send_file,
+    redirect,
+    url_for,
+    flash,
+    has_request_context,
+)
 from flask_wtf import Form
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import login_required, LoginManager, current_user
 from wtforms.fields import DateField, TimeField
 import requests
+import logging
 from datetime import datetime
 from auth import User, db
+from flask.logging import default_handler
+
+logging.basicConfig()
+host_backend = "csms1"
+
+
+class RequestFormatter(logging.Formatter):
+    def format(self, record):
+        if has_request_context():
+            record.url = request.url
+            record.remote_addr = request.remote_addr
+        else:
+            record.url = None
+            record.remote_addr = None
+
+        return super().format(record)
 
 
 def create_app():
@@ -14,7 +40,14 @@ def create_app():
     # Secret bad on purpose
     app.config["SECRET_KEY"] = "password"
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///db.sqlite"
+    app.name = "e-Quijote"
     db.init_app(app)
+
+    formatter = RequestFormatter(
+        "[%(asctime)s] %(remote_addr)s requested %(url)s\n"
+        "%(levelname)s in %(module)s: %(message)s"
+    )
+    default_handler.setFormatter(formatter)
 
     # blueprint for auth routes in our app
     from auth import auth as auth_blueprint
@@ -51,7 +84,7 @@ def profile():
 @app.route("/chargers")
 @login_required
 def chargers():
-    url = "http://localhost:8080/chargers"
+    url = f"http://{host_backend}:8080/chargers"
     response = requests.get(url)
     json_data = response.json()
     items = []
@@ -80,8 +113,9 @@ def chargers():
 
 
 @app.route("/charger")
+@login_required
 def charger():
-    url = "http://localhost:8080/chargers"
+    url = f"http://{host_backend}:8080/chargers"
     response = requests.get(url)
     json_data = response.json()
     items = []
@@ -123,10 +157,95 @@ class DateForm(Form):
     tp = TimeField("TimePicker")
 
 
+@app.route("/locallist")
+@login_required
+def locallist():
+    charger_id = request.args.get("id", type=str)
+    url = f"http://{host_backend}:8080/locallist"
+    response = requests.get(url, json={"id": charger_id})
+    json_data = response.json()
+
+    args = {"charger_id": charger_id}
+
+    locallist = json_data["LocalList"]
+    return render_template(
+        "locallist.html", args=args, locallist=locallist, current_user=current_user
+    )
+
+
+@app.route("/locallist", methods=["POST"])
+@login_required
+def locallist_post():
+    charger_id = request.args.get("id", type=str)
+    url = f"http://{host_backend}:8080/locallist"
+    response = requests.get(url, json={"id": charger_id})
+    json_data = response.json()
+    idToken = request.form["content"]
+    status = request.form["inputStatus"]
+    type = request.form["inputType"]
+    args = {"charger_id": charger_id}
+
+    locallist = json_data["LocalList"]
+    new_locallist = []
+    for element in locallist:
+        new_locallist.append(
+            {
+                "idToken": element["idToken"]["idToken"],
+                "type": element["idToken"]["type"],
+                "status": element["idTokenInfo"]["status"],
+            }
+        )
+
+    new_locallist.append(
+        {
+            "idToken": idToken,
+            "type": type,
+            "status": status,
+        }
+    )
+
+    # send new locallist
+    url = f"http://{host_backend}:8080/locallist"
+    response = requests.post(url, json={"id": charger_id, "locallist": new_locallist})
+
+    return redirect(f"/locallist?id={charger_id}")
+
+
+@app.route("/deletelocallist")
+@login_required
+def locallist_delete():
+    charger_id = request.args.get("id", type=str)
+    id_token = request.args.get("idtoken", type=str)
+    # get current locallist
+    url = f"http://{host_backend}:8080/locallist"
+    response = requests.get(url, json={"id": charger_id})
+    json_data = response.json()
+    args = {"charger_id": charger_id}
+
+    locallist = json_data["LocalList"]
+    new_locallist = []
+    for element in locallist:
+        if element["idToken"]["idToken"] != id_token:
+            new_locallist.append(
+                {
+                    "idToken": element["idToken"]["idToken"],
+                    "type": element["idToken"]["type"],
+                    "status": element["idTokenInfo"]["status"],
+                }
+            )
+
+    # send new locallist
+    url = f"http://{host_backend}:8080/locallist"
+    response = requests.post(url, json={"id": charger_id, "locallist": new_locallist})
+
+    return redirect(f"/locallist?id={charger_id}")
+
+
 @app.route("/reserve")
+@login_required
 def reserve():
     charger_id = request.args.get("id", type=str)
-    print(charger_id)
+
     connector = request.args.get("connector", default="0", type=str)
     args = {"charger_id": charger_id, "connector": connector}
     form = DateForm()
@@ -136,6 +255,7 @@ def reserve():
 
 
 @app.route("/reserve", methods=["POST"])
+@login_required
 def reserve_post():
     charger_id = request.args.get("id", type=str)
     connector = request.args.get("connector", default="0", type=int)
@@ -143,7 +263,10 @@ def reserve_post():
     form_time = request.form["tp"]
     try:
         date = datetime.strptime(form_date + " " + form_time, "%Y-%m-%d %H:%M")
-        url = "http://localhost:8080/reserve"
+        if date < datetime.now():
+            flash("Please enter a correct date")
+            return redirect(url_for("reserve"))
+        url = f"http://{host_backend}:8080/reserve"
         json = {
             "id": charger_id,
             "connector": int(connector),
@@ -163,11 +286,11 @@ def reserve_post():
 @login_required
 def display_messages():
     charger_id = request.args.get("id", type=str)
-    url = "http://localhost:8080/displayMessage"
+    url = f"http://{host_backend}:8080/displayMessage"
     json = {"id": charger_id}
     response = requests.get(url, json=json)
 
-    url = "http://localhost:8080/chargers"
+    url = f"http://{host_backend}:8080/chargers"
     response = requests.get(url)
     json_data = response.json()
 
@@ -194,13 +317,13 @@ def display_messages():
 @login_required
 def variables():
     charger_id = request.args.get("id", type=str)
-    url = "http://localhost:8080/variables"
+    url = f"http://{host_backend}:8080/variables"
     json = {"id": charger_id}
     response = requests.get(url, json=json)
     json_data = response.json()
     variables = json_data["result"]
     print(variables)
-    url = "http://localhost:8080/chargers"
+    url = f"http://{host_backend}:8080/chargers"
     response = requests.get(url)
     json_data = response.json()
 
@@ -224,7 +347,7 @@ def display_messages_post():
     charger_id = request.args.get("id", type=str)
     last_id = request.args.get("lastid", type=int)
     msg = form_date = request.form["content"]
-    url = "http://localhost:8080/displayMessage"
+    url = f"http://{host_backend}:8080/displayMessage"
     json = {"id": charger_id, "msg": msg, "msgId": last_id + 1}
     response = requests.post(url, json=json)
     return redirect(f"/displaymessages?id={charger_id}")
@@ -238,12 +361,11 @@ def display_messages_edit():
 
     # get old displaymessage
 
-    charger_id = request.args.get("id", type=str)
-    url = "http://localhost:8080/displayMessage"
+    url = f"http://{host_backend}:8080/displayMessage"
     json = {"id": charger_id}
     response = requests.get(url, json=json)
 
-    url = "http://localhost:8080/chargers"
+    url = f"http://{host_backend}:8080/chargers"
     response = requests.get(url)
     json_data = response.json()
 
@@ -266,19 +388,20 @@ def display_messages_edit():
 def display_messages_edit_post():
     charger_id = request.args.get("id", type=str)
     msg_id = request.args.get("msgId", type=int)
-    msg = form_date = request.form["content"]
-    url = "http://localhost:8080/displayMessage"
+    msg = request.form["content"]
+    url = f"http://{host_backend}:8080/displayMessage"
     json = {"id": charger_id, "msg": msg, "msgId": msg_id}
     response = requests.post(url, json=json)
     return redirect(f"/displaymessages?id={charger_id}")
 
 
 @app.route("/cancelreservation")
+@login_required
 def cancel_reserve():
     charger_id = request.args.get("id", default="cp", type=str)
     connector = request.args.get("connector", default="0", type=int)
     json = {"id": charger_id, "connector": int(connector)}
-    url = "http://localhost:8080/cancelReservation"
+    url = f"http://{host_backend}:8080/cancelReservation"
     response = requests.post(url, json=json)
     json_data = response.json()
     return redirect(f"/charger?id={charger_id}", code=302)
@@ -295,4 +418,4 @@ def get_ico():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0", port="5000")

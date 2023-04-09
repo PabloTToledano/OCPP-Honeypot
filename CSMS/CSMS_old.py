@@ -1,8 +1,6 @@
 import asyncio
-import http
 import logging
 import random
-import argparse
 import ssl
 import os
 import io
@@ -12,13 +10,8 @@ import pathlib
 import logstash
 from datetime import datetime
 
-try:
-    import websockets
-except ModuleNotFoundError:
-    print("This honeypot uses the 'websockets' and ocpp package.")
-    import sys
+import websockets
 
-    sys.exit(1)
 
 from ocpp.routing import on
 from ocpp.v201 import ChargePoint as cp
@@ -58,28 +51,17 @@ class LoggerLogstash(object):
 
 
 class ChargePoint(cp):
-    def __init__(self, id, connection):
-        cp.__init__(self, id, connection)
-        self.charger_station = None
-        self.connectors = {}
-        self.display_message = []
-        self.vt_client = None
-        # Only create virus total client if token is found
-        try:
-            with open("/config.json") as file:
-                config = json.load(file)
-            if config.get("VT_API_KEY", "") != "":
-                vt_client = vt.Client(config.get("VT_API_KEY"))
-        except:
-            pass
+    vt_client = None
+    if os.getenv("VT_API_KEY"):
+        vt_client = vt.Client(os.getenv("VT_API_KEY"))
 
     @on("BootNotification")
     def on_boot_notification(self, charging_station, reason, **kwargs):
-        logging.info(charging_station)
-        self.charger_station = charging_station
+        print(charging_station)
+        print(reason)
         return call_result.BootNotificationPayload(
             current_time=datetime.utcnow().isoformat(),
-            interval=1000,
+            interval=10,
             status="Accepted",
         )
 
@@ -115,18 +97,10 @@ class ChargePoint(cp):
         **kwargs,
     ):
         #  A connector status changed, the Charging Station sends a StatusNotificationRequest to the CSMS to inform the CSMS about the new status.
-        self.connectors[str(connector_id)] = connector_status
         return call_result.StatusNotificationPayload()
 
     @on("NotifyDisplayMessages")
-    def on_notify_display_messages(
-        self,
-        request_id: int,
-        message_info: list | None = None,
-        tbc: bool | None = None,
-        **kwargs,
-    ):
-        self.display_message = message_info
+    def on_notify_display_messages(self, **kwargs):
         return call_result.NotifyDisplayMessagesPayload()
 
     @on("LogStatusNotification")
@@ -182,6 +156,7 @@ class ChargePoint(cp):
         evse_id: int,
         **kwargs,
     ):
+
         return call_result.NotifyEVChargingSchedulePayload(status="Accepted")
 
     @on("MeterValues")
@@ -235,6 +210,7 @@ class ChargePoint(cp):
     def on_cleared_charging_limit(
         self, charging_limit_source: str, evse_id: int | None = None, **kwargs
     ):
+
         return call_result.ClearedChargingLimitPayload()
 
     @on("TransactionEvent")
@@ -284,37 +260,21 @@ class ChargePoint(cp):
         # component, variable
 
         request = call.GetVariablesPayload(get_variable_data=variable_data)
-        return await self.call(request)
+        response = await self.call(request)
 
     async def send_set_network_profile(
         self, configuration_slot: int, connection_data: dict
     ):
+
         request = call.SetNetworkProfilePayload(
             configuration_slot=configuration_slot, connection_data=connection_data
         )
         response = await self.call(request)
 
     async def send_request_reset(self, type: str, evse_id: int | None = None):
+
         request = call.ResetPayload(type=type, evse_id=evse_id)
         response = await self.call(request)
-
-    async def send_reserve_now(
-        self,
-        id: int,
-        expiry_date_time: str,
-        id_token: dict,
-        connector_type: str | None = None,
-        evse_id: int | None = None,
-        group_id_token: dict | None = None,
-    ):
-        request = call.ReserveNowPayload(
-            id=id, expiry_date_time=expiry_date_time, id_token=id_token
-        )
-        return await self.call(request)
-
-    async def send_reserve_cancel(self, reservation_id: int):
-        request = call.CancelReservationPayload(reservation_id=reservation_id)
-        return await self.call(request)
 
     async def send_sendlocallist(
         self,
@@ -322,6 +282,7 @@ class ChargePoint(cp):
         update_type: str,
         local_authorization_list: list | None = None,
     ):
+
         request = call.SendLocalListPayload(
             version_number=version_number,
             update_type=update_type,
@@ -332,20 +293,19 @@ class ChargePoint(cp):
     async def send_get_localist(
         self,
     ):
+
         request = call.GetLocalListVersionPayload()
         response = await self.call(request)
 
-    async def send_set_display_messages(self, message):
-        request = call.SetDisplayMessagePayload(message=message)
-        return await self.call(request)
-
-    async def send_get_display_messages(
-        self, request_id, id=None, priority=None, state=None
-    ):
-        request = call.GetDisplayMessagesPayload(
-            request_id, id=id, priority=priority, state=state
+    async def send_set_display_messages(self, priority, message):
+        request = call.SetDisplayMessagePayload(
+            message={
+                "id": random.randint(0, 9999),
+                "priority": priority,
+                "message": message,
+            },
         )
-        return await self.call(request)
+        response = await self.call(request)
 
 
 async def on_connect(websocket, path):
@@ -404,13 +364,14 @@ class TLSCheckCert(websockets.WebSocketServerProtocol):
         super().handler_task = super().loop.create_task(super().handler())
 
 
-async def main(
+async def run_ocpp_websocket(
     address: str,
     port: int,
     security_profile: int,
     logstash_host: str | None,
     logstash_port: int | None,
 ):
+
     logging.info(f"Security profile {security_profile}")
 
     if logstash_host is not None:
@@ -466,6 +427,7 @@ async def main(
 
 
 if __name__ == "__main__":
+
     # load config json
     with open("/config.json") as file:
         config = json.load(file)
@@ -474,7 +436,7 @@ if __name__ == "__main__":
     logging.info(config)
 
     asyncio.run(
-        main(
+        run_ocpp_websocket(
             config.get("IP", "0.0.0.0"),
             config.get("port", "9000"),
             config.get("security_profile", 1),

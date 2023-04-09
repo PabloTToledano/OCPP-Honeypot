@@ -9,103 +9,76 @@ import json
 import os
 from ocpp.v201 import datatypes, enums
 from CSMS import ChargePoint, LoggerLogstash, TLSCheckCert, UserInfoProtocol
+from centralsystem import CentralSystem
 
 
-class CentralSystem:
-    def __init__(self):
-        self._chargers = {}
+async def set_locallist(request):
+    """HTTP handler for getting the ids of all charge points."""
+    data = await request.json()
+    csms = request.app["csms"]
+    # datatypes.IdTokenType(type=
+    # central = "Central"
+    # e_maid = "eMAID"
+    # iso14443 = "ISO14443"
+    # iso15693 = "ISO15693"
+    # key_code = "KeyCode"
+    # local = "Local"
+    # mac_address = "MacAddress"
+    # no_authorization = "NoAuthorization"
 
-    def register_charger(self, cp: ChargePoint) -> asyncio.Queue:
-        """Register a new ChargePoint at the CSMS. The function returns a
-        queue.  The CSMS will put a message on the queue if the CSMS wants to
-        close the connection.
-        """
-        queue = asyncio.Queue(maxsize=1)
-
-        # Store a reference to the task so we can cancel it later if needed.
-        task = asyncio.create_task(self.start_charger(cp, queue))
-        self._chargers[cp] = task
-
-        return queue
-
-    async def start_charger(self, cp, queue):
-        """Start listening for message of charger."""
-        try:
-            await cp.start()
-        except Exception as e:
-            print(f"Charger {cp.id} disconnected: {e}")
-        finally:
-            # Make sure to remove referenc to charger after it disconnected.
-            del self._chargers[cp]
-
-            # This will unblock the `on_connect()` handler and the connection
-            # will be destroyed.
-            await queue.put(True)
-
-    # async def change_configuration(self, key: str, value: str):
-    #     for cp in self._chargers:
-    #         await cp.change_configuration(key, value)
-
-    async def change_variables(self, id: str, variable_data: list):
-        for cp in self._chargers:
-            if cp.id == id:
-                await cp.send_set_variables(variable_data)
-
-    async def get_variables(self, id: str, get_variable_data: list):
-        for cp in self._chargers:
-            if cp.id == id:
-                result = await cp.send_get_variables(get_variable_data)
-                return result.get_variable_result
-
-    async def get_connected_chargers(self):
-        chargers = {}
-        for cp in self._chargers:
-            chargers[cp.id] = {
-                "ChargerStation": cp.charger_station,
-                "connectors": cp.connectors,
-                "displayMesagges": cp.display_message,
+    # id_token_info=datatypes.IdTokenInfoType(status=
+    # accepted = "Accepted"
+    # blocked = "Blocked"
+    # concurrent_tx = "ConcurrentTx"
+    # expired = "Expired"
+    # invalid = "Invalid"
+    local_authorization_list = []
+    local_authorization_list_dict = []
+    for locallist_entry in data["locallist"]:
+        local_authorization_list_dict.append(
+            {
+                "idToken": {
+                    "idToken": locallist_entry["idToken"],
+                    "type": locallist_entry["type"],
+                },
+                "idTokenInfo": {"status": locallist_entry["status"]},
             }
-        return chargers
+        )
+        local_authorization_list.append(
+            datatypes.AuthorizationData(
+                id_token=datatypes.IdTokenType(
+                    id_token=locallist_entry["idToken"], type=locallist_entry["type"]
+                ),
+                id_token_info=datatypes.IdTokenInfoType(
+                    status=locallist_entry["status"]
+                ),
+            )
+        )
+    version_number = 1
+    update_type = enums.UpdateType.differential
+    result = await csms.send_sendlocallist(
+        data["id"],
+        version_number,
+        update_type,
+        local_authorization_list,
+        local_authorization_list_dict,
+    )
 
-    async def reserve_now(
-        self, id: str, id_token: dict, expiry_date_time: datetime, connector: int = 1
-    ):
-        for cp, task in self._chargers.items():
-            if cp.id == id:
-                result = await cp.send_reserve_now(
-                    id=connector,
-                    expiry_date_time=expiry_date_time,
-                    id_token=id_token,
-                )
-                return result.status
+    return web.Response(text=json.dumps({"result": result}))
 
-        raise ValueError(f"Charger {id} not connected.")
 
-    async def cancel_reserve(self, id: str, connector: int = 1):
-        for cp, task in self._chargers.items():
-            if cp.id == id:
-                result = await cp.send_reserve_cancel(reservation_id=connector)
-                return result.status
+async def get_locallist(request):
+    """HTTP handler for getting the ids of all charge points."""
+    # data = await request.json()
+    csms = request.app["csms"]
+    data = await request.json()
+    locallist = await csms.get_locallist(data["id"])
 
-        raise ValueError(f"Charger {id} not connected.")
-
-    async def set_display_message(self, id: str, message):
-        for cp, task in self._chargers.items():
-            if cp.id == id:
-                result = await cp.send_set_display_messages(message)
-                return result.status
-        raise ValueError(f"Charger {id} not connected.")
-
-    async def get_display_message(self, id: str):
-        for cp, task in self._chargers.items():
-            if cp.id == id:
-                result = await cp.send_get_display_messages(1)
-                return result.status
-        raise ValueError(f"Charger {id} not connected.")
+    return web.Response(text=json.dumps({"LocalList": locallist}))
 
 
 async def get_variables(request):
-    """HTTP handler for getting the ids of all charge points."""
+    """HTTP handler for getting variables."""
     data = await request.json()
     csms = request.app["csms"]
     variable_data = datatypes.GetVariableDataType(
@@ -120,7 +93,7 @@ async def get_variables(request):
 
 
 async def set_variables(request):
-    """HTTP handler for getting the ids of all charge points."""
+    """HTTP handler for setting variables."""
     data = await request.json()
     csms = request.app["csms"]
     # {"attributeValue":"","component":"",variable:""}
@@ -302,6 +275,8 @@ async def create_http_server(csms: CentralSystem):
     app.add_routes([web.get("/variables", get_variables)])
     app.add_routes([web.post("/displayMessage", set_display_message)])
     app.add_routes([web.get("/displayMessage", get_display_message)])
+    app.add_routes([web.get("/locallist", get_locallist)])
+    app.add_routes([web.post("/locallist", set_locallist)])
 
     # Put CSMS in app so it can be accessed from request handlers.
     # https://docs.aiohttp.org/en/stable/faq.html#where-do-i-put-my-database-connection-so-handlers-can-access-it

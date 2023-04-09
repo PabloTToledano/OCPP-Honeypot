@@ -10,6 +10,7 @@ COPY ./requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
 
 COPY ./CSMS.py /CSMS.py
+COPY ./centralsystem.py /centralsystem.py
 COPY ./backend.py /backend.py
 COPY ./config.json /config.json
 CMD ["python","/backend.py"]

@@ -63,6 +63,7 @@ class ChargePoint(cp):
         self.charger_station = None
         self.connectors = {}
         self.display_message = []
+        self.local_list = []
         self.vt_client = None
         # Only create virus total client if token is found
         try:
@@ -321,19 +322,22 @@ class ChargePoint(cp):
         version_number: int,
         update_type: str,
         local_authorization_list: list | None = None,
+        local_authorization_list_dict: list | None = None,
     ):
         request = call.SendLocalListPayload(
             version_number=version_number,
             update_type=update_type,
             local_authorization_list=local_authorization_list,
         )
-        response = await self.call(request)
+        self.local_list = local_authorization_list_dict
+
+        return await self.call(request)
 
     async def send_get_localist(
         self,
     ):
         request = call.GetLocalListVersionPayload()
-        response = await self.call(request)
+        return await self.call(request)
 
     async def send_set_display_messages(self, message):
         request = call.SetDisplayMessagePayload(message=message)

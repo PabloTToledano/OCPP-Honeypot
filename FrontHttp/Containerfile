@@ -1,0 +1,15 @@
+FROM python:3.11.2-alpine3.17
+RUN apk add --update git
+
+
+COPY ./requirements.txt /requirements.txt
+RUN pip install -r /requirements.txt
+
+
+COPY ./instance /FrontHttp/instance
+COPY ./images /FrontHttp/images
+COPY ./templates /FrontHttp/templates
+COPY ./app.py /FrontHttp/app.py
+COPY ./auth.py /FrontHttp/auth.py
+WORKDIR /FrontHttp
+CMD ["python","app.py"]
