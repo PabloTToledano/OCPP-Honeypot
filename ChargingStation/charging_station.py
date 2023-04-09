@@ -66,7 +66,8 @@ class ChargePoint(cp):
         self.vt_client = None
         # Only create virus total client if token is found
         if config.get("VT_API_KEY", "") != "":
-            vt_client = vt.Client(config.get("VT_API_KEY"))
+            LOGGER.info("Creating VirusTotal object")
+            self.vt_client = vt.Client(config.get("VT_API_KEY"))
 
     def generate_connectors(self, config):
         n_connectors = config.get("connectors", 1)
@@ -234,7 +235,7 @@ class ChargePoint(cp):
         if self.vt_client:
             try:
                 data = io.StringIO(data)
-                analysis = self.client.scan_file(data, wait_for_completion=True)
+                analysis = self.vt_client.scan_file(data, wait_for_completion=True)
                 LOGGER.info(f"VirusTotal analysis: {analysis.stats}")
             except Exception as e:
                 # usually due to invalid virustotal api key
@@ -461,7 +462,7 @@ class ChargePoint(cp):
         return call_result.CostUpdatedPayload()
 
     @on("UpdateFirmware")
-    def on_update_firmware(
+    async def on_update_firmware(
         self,
         request_id: int,
         firmware: dict,
@@ -469,19 +470,26 @@ class ChargePoint(cp):
         retry_interval: int | None = None,
         **kwargs,
     ):
-        datatypes.FirmwareType()
         # send firmware uri to virustotal for analysis
         if self.vt_client:
             try:
                 url_id = vt.url_id(firmware.get("location"))
-                url = self.client.get_object("/urls/{}", url_id)
+                analysis = await self.vt_client.scan_url_async(
+                    firmware.get("location"), wait_for_completion=True
+                )
+                # url = await self.vt_client.get_object_async("/analyses/{}", analysis.id)
+                url = await self.vt_client.get_object_async("/urls/{}", url_id)
                 LOGGER.info(
                     f"VirusTotal analysis: {url.last_analysis_stats}",
-                    extra={"url": "firmware.get('location')"},
+                    extra={
+                        "url": firmware.get("location"),
+                        "result": url.last_analysis_stats,
+                    },
                 )
             except Exception as e:
                 # usually due to invalid virustotal api key
                 pass
+
         return call_result.UpdateFirmwarePayload("Accepted")
 
     async def send_firmware_status_notification(self, status):
@@ -489,7 +497,7 @@ class ChargePoint(cp):
         await self.call(request)
 
     @after("UpdateFirmware")
-    async def after_ipdate_firmware(self, status):
+    async def after_update_firmware(self, request_id: int, **kwargs):
         # send FirmwareStatusNotificationRequest Status = Downloaded,Installing,Installed
         time.sleep(random.randint(4, 20))
         # fake download, installing and installed notifications

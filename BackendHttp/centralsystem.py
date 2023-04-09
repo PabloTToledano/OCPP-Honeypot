@@ -120,3 +120,13 @@ class CentralSystem:
         for cp, task in self._chargers.items():
             if cp.id == id:
                 return cp.local_list
+
+    async def update_firmware(self, id: str, url: str):
+        for cp, task in self._chargers.items():
+            if cp.id == id:
+                firmware = datatypes.FirmwareType(
+                    location=url, retrieve_date_time=datetime.now().isoformat()
+                )
+                result = await cp.send_update_firmware(request_id=1, firmware=firmware)
+                return result.status
+        raise ValueError(f"Charger {id} not connected.")

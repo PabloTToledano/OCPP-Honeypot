@@ -26,6 +26,7 @@ from ocpp.v201 import call_result, call
 
 
 logging.basicConfig(level=logging.INFO)
+LOGGER = logging.getLogger("ocpp")
 
 
 class LoggerLogstash(object):
@@ -64,13 +65,14 @@ class ChargePoint(cp):
         self.connectors = {}
         self.display_message = []
         self.local_list = []
+        self.update_status = ""
         self.vt_client = None
         # Only create virus total client if token is found
         try:
             with open("/config.json") as file:
                 config = json.load(file)
             if config.get("VT_API_KEY", "") != "":
-                vt_client = vt.Client(config.get("VT_API_KEY"))
+                self.vt_client = vt.Client(config.get("VT_API_KEY"))
         except:
             pass
 
@@ -202,7 +204,7 @@ class ChargePoint(cp):
         if self.vt_client:
             try:
                 data = io.StringIO(data)
-                analysis = self.client.scan_file(data, wait_for_completion=True)
+                analysis = self.vt_client.scan_file(data, wait_for_completion=True)
                 LOGGER.info(f"VirusTotal analysis: {analysis.stats}")
             except Exception as e:
                 # usually due to invalid virustotal api key

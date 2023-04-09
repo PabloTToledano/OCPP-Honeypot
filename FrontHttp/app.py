@@ -157,6 +157,29 @@ class DateForm(Form):
     tp = TimeField("TimePicker")
 
 
+@app.route("/update")
+@login_required
+def update():
+    charger_id = request.args.get("id", type=str)
+    args = {"charger_id": charger_id}
+
+    return render_template("update.html", args=args, current_user=current_user)
+
+
+@app.route("/update", methods=["POST"])
+@login_required
+def update_post():
+    charger_id = request.args.get("id", type=str)
+    firmwareurl = request.form["content"]
+
+    url = f"http://{host_backend}:8080/update"
+    json = {"id": charger_id, "firmwareURL": firmwareurl}
+    response = requests.post(url, json=json)
+
+    flash("Firmware sent")
+    return redirect(f"/update?id={charger_id}")
+
+
 @app.route("/locallist")
 @login_required
 def locallist():

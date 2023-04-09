@@ -16,22 +16,6 @@ async def set_locallist(request):
     """HTTP handler for getting the ids of all charge points."""
     data = await request.json()
     csms = request.app["csms"]
-    # datatypes.IdTokenType(type=
-    # central = "Central"
-    # e_maid = "eMAID"
-    # iso14443 = "ISO14443"
-    # iso15693 = "ISO15693"
-    # key_code = "KeyCode"
-    # local = "Local"
-    # mac_address = "MacAddress"
-    # no_authorization = "NoAuthorization"
-
-    # id_token_info=datatypes.IdTokenInfoType(status=
-    # accepted = "Accepted"
-    # blocked = "Blocked"
-    # concurrent_tx = "ConcurrentTx"
-    # expired = "Expired"
-    # invalid = "Invalid"
     local_authorization_list = []
     local_authorization_list_dict = []
     for locallist_entry in data["locallist"]:
@@ -99,6 +83,15 @@ async def set_variables(request):
     # {"attributeValue":"","component":"",variable:""}
     await csms.set_variables(data["id"], data.get("variable_data", []))
 
+    return web.Response(text="OK")
+
+
+async def update_firmware(request):
+    """HTTP handler for updating the CP."""
+    data = await request.json()
+    csms = request.app["csms"]
+    # {"attributeValue":"","component":"",variable:""}
+    await csms.update_firmware(data["id"], data["firmwareURL"])
     return web.Response(text="OK")
 
 
@@ -277,6 +270,7 @@ async def create_http_server(csms: CentralSystem):
     app.add_routes([web.get("/displayMessage", get_display_message)])
     app.add_routes([web.get("/locallist", get_locallist)])
     app.add_routes([web.post("/locallist", set_locallist)])
+    app.add_routes([web.post("/update", update_firmware)])
 
     # Put CSMS in app so it can be accessed from request handlers.
     # https://docs.aiohttp.org/en/stable/faq.html#where-do-i-put-my-database-connection-so-handlers-can-access-it
