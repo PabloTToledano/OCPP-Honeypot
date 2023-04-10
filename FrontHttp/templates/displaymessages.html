@@ -40,13 +40,16 @@
                                 <td>{{ msg.id|safe }}</td>
                                 <td>{{ msg.message.content|safe }}</td>
                                 <td>
+
                                     <div class="btn-group">
                                         <a href="/updatedisplaymessage?id={{ charger.id }}&msgId={{ msg.id }}"
                                             class="btn btn-secondary btn-sm active" role="button"
                                             aria-pressed="true">Edit</a>
+                                        {% if msgs|length > 1 %}
                                         <a href="/deletedisplaymessage?id={{ charger.id }}&msgId={{ msg.id }}"
                                             class="btn btn-danger btn-sm active" role="button"
                                             aria-pressed="true">Delete</a>
+                                        {% endif %}
                                     </div>
                                 </td>
                             </tr>

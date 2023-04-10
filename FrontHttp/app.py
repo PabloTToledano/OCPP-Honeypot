@@ -132,21 +132,47 @@ def charger():
 
     for connector in json_data[charger_id].get("connectors"):
         status = json_data[charger_id]["connectors"][connector]
-        if status == "Reserved":
-            color = "bg-danger"
-            button_text = "Cancel reservation"
-            url = f"cancelreservation?id={charger_id}&connector={connector}"
-        else:
-            color = "bg-success"
-            button_text = "Make reservation"
-            url = f"reserve?id={charger_id}&connector={connector}"
+        match status:
+            case "Reserved":
+                color = "bg-warning"
+                buttons = [
+                    {
+                        "button_text": "Cancel reservation",
+                        "url": f"cancelreservation?id={charger_id}&connector={connector}",
+                    },
+                    {
+                        "button_text": "Change Status",
+                        "url": f"status?id={charger_id}&connector={connector}",
+                    },
+                ]
+            case "Available":
+                color = "bg-success"
+                buttons = [
+                    {
+                        "button_text": "Make reservation",
+                        "url": f"reserve?id={charger_id}&connector={connector}",
+                    },
+                    {
+                        "button_text": "Change Status",
+                        "url": f"status?id={charger_id}&connector={connector}",
+                    },
+                ]
+            case "Unavailable":
+                color = "bg-danger"
+                buttons = [
+                    {
+                        "button_text": "Change Status",
+                        "url": f"status?id={charger_id}&connector={connector}",
+                    }
+                ]
+                button_text = "Make reservation"
+                url = f"status?id={charger_id}&connector={connector}"
         items.append(
             {
                 "color": color,
                 "name": f"Connector {connector}",
                 "reverse_status": status,
-                "url": url,
-                "button_text": button_text,
+                "buttons": buttons,
             }
         )
 
@@ -158,6 +184,32 @@ def charger():
 class DateForm(Form):
     dt = DateField("DatePicker", format="%Y-%m-%d")
     tp = TimeField("TimePicker")
+
+
+@app.route("/status")
+@login_required
+def status():
+    charger_id = request.args.get("id", type=str)
+    connector = request.args.get("connector", default="0", type=str)
+    args = {"charger_id": charger_id, "connector": connector}
+
+    return render_template("status.html", args=args, current_user=current_user)
+
+
+@app.route("/status", methods=["POST"])
+@login_required
+def status_post():
+    charger_id = request.args.get("id", type=str)
+    connector = request.args.get("connector", default="0", type=str)
+    args = {"charger_id": charger_id, "connector": connector}
+    app.logger.info(request.form)
+    new_status = request.form["inputStatus"]
+
+    url = f"http://{host_backend}:8080/status"
+    json = {"id": charger_id, "connectorId": connector, "operationalStatus": new_status}
+    response = requests.post(url, json=json)
+
+    return redirect(f"/charger?id={charger_id}")
 
 
 @app.route("/update")

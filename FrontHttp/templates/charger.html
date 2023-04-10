@@ -23,11 +23,16 @@
   <div class="row">
     {% for item in items %}
     <div class="col-md-3 mt-3">
-      <div class="card mb-3 box-shadow  text-white {{ item.color }}">
-        <div class="card-body">
+      <div class="card mb-2 box-shadow  text-white {{ item.color }}">
+        <div class="card-body center">
           <h5 class="card-title">{{ item.name }}</h5>
           <p class="card-text">{{ item.reverse_status }}</p>
-          <a href="{{ item.url }}" class="btn btn-light ml-auto">{{ item.button_text }}</a>
+
+          {% for button in item.buttons %}
+          <a href="{{ button.url }}" class="btn btn-light btn-sm  mb-2">{{ button.button_text }}</a>
+          {% endfor %}
+
+
         </div>
       </div>
     </div>

@@ -139,3 +139,12 @@ class CentralSystem:
                 result = await cp.send_update_firmware(request_id=1, firmware=firmware)
                 return result.status
         raise ValueError(f"Charger {id} not connected.")
+
+    async def change_status(self, id: str, operational_status: str, connector: int):
+        for cp, task in self._chargers.items():
+            if cp.id == id:
+                result = await cp.send_change_availability(
+                    operational_status, datatypes.EVSEType(1, connector)
+                )
+                return result.status
+        raise ValueError(f"Charger {id} not connected.")

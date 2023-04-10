@@ -56,9 +56,11 @@ class ChargePoint(cp):
         self.availability: str = "Operative"
         self.model = config.get("model", "UMA")
         self.vendor = config.get("vendor_name", "Andalucia")
-        self.connectors, self.reserved, self.reserved_exp = self.generate_connectors(
-            config
-        )
+        (
+            self.connectors,
+            self.connector_status,
+            self.connector_status_exp,
+        ) = self.generate_connectors(config)
         self.occp_variables = config.get("OCPP_variables", {})
         self.display_message = []
         self.local_list = []
@@ -76,7 +78,7 @@ class ChargePoint(cp):
         reserved_exp = []
         for i in range(n_connectors):
             connectors.append("Operative")
-            reserved.append(False)
+            reserved.append("Available")
             reserved_exp.append(datetime.now())
         return connectors, reserved, reserved_exp
 
@@ -87,11 +89,13 @@ class ChargePoint(cp):
             await asyncio.sleep(interval)
 
     async def send_status_notification(self):
-        for index in range(len(self.connectors)):
-            if self.reserved[index]:
-                connector_status = "Reserved"
-            else:
+        for index in range(len(self.connector_status)):
+            if self.connector_status[index] == "Operative":
                 connector_status = "Available"
+            elif self.connector_status[index] == "Inoperative":
+                connector_status = "Unavailable"
+            else:
+                connector_status = self.connector_status[index]
             request = call.StatusNotificationPayload(
                 timestamp=datetime.isoformat(datetime.utcnow()),
                 connector_status=connector_status,
@@ -390,21 +394,25 @@ class ChargePoint(cp):
     def on_change_availability(
         self, operational_status: str, evse: dict | None = None, **kwargs
     ):
-        if operational_status not in ["Inoperative", "Operative"]:
-            return call_result.ChangeAvailabilityPayload(status="Rejected")
         if evse:
             # change availability of that connector
-            if evse.get("connectorId") and evse.get("connectorId") < len(
-                self.connectors
+            if evse.get("connector_id") is not None and evse.get("connector_id") < len(
+                self.connector_status
             ):
-                self.connectors[evse.get("connectorId")] = operational_status
+                self.connector_status[evse.get("connector_id")] = operational_status
                 return call_result.ChangeAvailabilityPayload(status="Accepted")
             else:
                 return call_result.ChangeAvailabilityPayload(status="Rejected")
         else:
-            # change availability chargingn station
-            self.availability = operational_status
+            # change availability of all the chargers station
+            for index in len(self.connectors):
+                self.connector_status[index] = operational_status
             return call_result.ChangeAvailabilityPayload(status="Accepted")
+
+    @after("ChangeAvailability")
+    async def after_change_availability(self, **kwargs):
+        # send StatusNotificationRequest(evseId, connectorId, connectorStatus, [timestamp])
+        await self.send_status_notification()
 
     @on("ReserveNow")
     def on_reserve_now(
@@ -418,18 +426,21 @@ class ChargePoint(cp):
         **kwargs,
     ):
         try:
-            if id > len(self.reserved):
+            if id > len(self.connector_status):
                 return call_result.ReserveNowPayload(
                     status="Rejected",
                     status_info=datatypes.StatusInfoType(
                         reason_code="2", additional_info="Connector not available"
                     ),
                 )
-            if self.reserved[id] and self.reserved_exp[id] > datetime.now():
+            if (
+                self.connector_status[id] == "Reserved"
+                and self.connector_status_exp[id] > datetime.now()
+            ):
                 return call_result.ReserveNowPayload(status="Occupied")
             else:
-                self.reserved[id] = True
-                self.reserved_exp[id] = datetime.fromisoformat(expiry_date_time)
+                self.connector_status[id] = "Reserved"
+                self.connector_status_exp[id] = datetime.fromisoformat(expiry_date_time)
 
                 return call_result.ReserveNowPayload(status="Accepted")
         except:
@@ -446,14 +457,14 @@ class ChargePoint(cp):
         **kwargs,
     ):
         # free charging station
-        if reservation_id > len(self.reserved):
+        if reservation_id > len(self.connector_status):
             return call_result.CancelReservationPayload(
                 status="Rejected",
                 status_info=datatypes.StatusInfoType(
                     reason_code="2", additional_info="Connector not available"
                 ),
             )
-        self.reserved[reservation_id] = False
+        self.connector_status[reservation_id] = "Available"
         return call_result.CancelReservationPayload(status="Accepted")
 
     @after("CancelReservation")

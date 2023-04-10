@@ -367,6 +367,12 @@ class ChargePoint(cp):
         request = call.UpdateFirmwarePayload(request_id, firmware=firmware)
         return await self.call(request)
 
+    async def send_change_availability(
+        self, operational_status: str, evse: dict | None = None
+    ):
+        request = call.ChangeAvailabilityPayload(operational_status, evse)
+        return await self.call(request)
+
 
 async def on_connect(websocket, path):
     """For every new charge point that connects, create a ChargePoint
