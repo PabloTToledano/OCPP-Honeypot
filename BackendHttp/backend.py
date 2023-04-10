@@ -120,6 +120,15 @@ async def get_display_message(request):
     return web.Response(text="OK")
 
 
+async def clear_display_message(request):
+    """HTTP handler for deleting the ids of all charge points."""
+    data = await request.json()
+    csms = request.app["csms"]
+    # id=data["id"], msg=data["msg"], msg_id=data["msgId"]
+    await csms.clear_display_message(data["id"], data["msgId"])
+    return web.Response(text="OK")
+
+
 async def get_chargers(request):
     """HTTP handler for getting the ids of all charge points."""
     # data = await request.json()
@@ -268,6 +277,7 @@ async def create_http_server(csms: CentralSystem):
     app.add_routes([web.get("/variables", get_variables)])
     app.add_routes([web.post("/displayMessage", set_display_message)])
     app.add_routes([web.get("/displayMessage", get_display_message)])
+    app.add_routes([web.delete("/displayMessage", clear_display_message)])
     app.add_routes([web.get("/locallist", get_locallist)])
     app.add_routes([web.post("/locallist", set_locallist)])
     app.add_routes([web.post("/update", update_firmware)])

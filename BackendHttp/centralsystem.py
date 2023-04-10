@@ -97,6 +97,15 @@ class CentralSystem:
                 return result.status
         raise ValueError(f"Charger {id} not connected.")
 
+    async def clear_display_message(self, id: str, msg_id: int):
+        for cp, task in self._chargers.items():
+            if cp.id == id:
+                result = await cp.send_clear_display_messages(1)
+                if result.status == "Acepted":
+                    cp.display_message.pop(msg_id - 1)
+                return result.status
+        raise ValueError(f"Charger {id} not connected.")
+
     async def send_sendlocallist(
         self,
         id: str,

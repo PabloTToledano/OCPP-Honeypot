@@ -316,6 +316,13 @@ class ChargePoint(cp):
     @on("ClearDisplayMessage")
     def on_clear_display_messages(self, id: int, **kwargs):
         # TODO delete/invalidate the display message
+        # if id last element pop else set to None
+        if len(self.display_message) < id:
+            return call_result.ClearDisplayMessagePayload(status="Unknown")
+        else:
+            self.display_message.pop(id - 1)
+            for index in range(len(self.display_message)):
+                self.display_message[index]["id"] = index
         return call_result.ClearDisplayMessagePayload(status="Accepted")
 
     @on("GetLog")

@@ -353,6 +353,10 @@ class ChargePoint(cp):
         )
         return await self.call(request)
 
+    async def send_clear_display_messages(self, id):
+        request = call.ClearDisplayMessagePayload(id)
+        return await self.call(request)
+
     async def send_update_firmware(
         self,
         request_id: int,

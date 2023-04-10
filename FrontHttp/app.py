@@ -43,6 +43,9 @@ def create_app():
     app.name = "e-Quijote"
     db.init_app(app)
 
+    with app.app_context():
+        db.create_all()
+
     formatter = RequestFormatter(
         "[%(asctime)s] %(remote_addr)s requested %(url)s\n"
         "%(levelname)s in %(module)s: %(message)s"
@@ -319,7 +322,7 @@ def display_messages():
 
     display_messages = json_data[charger_id]["displayMesagges"]
     try:
-        last_id = display_messages[-1]["id"]
+        last_id = len(display_messages)
     except Exception as e:
         last_id = 0
     charger = {
@@ -404,6 +407,21 @@ def display_messages_edit():
         charger=charger,
         current_user=current_user,
     )
+
+
+@app.route("/deletedisplaymessage", methods=["GET"])
+@login_required
+def display_messages_delete():
+    charger_id = request.args.get("id", type=str)
+    msg_id = request.args.get("msgId", type=int)
+
+    # delete displaymessage
+
+    url = f"http://{host_backend}:8080/displayMessage"
+    json = {"id": charger_id, "msgId": msg_id}
+    response = requests.delete(url, json=json)
+
+    return redirect(f"/displaymessages?id={charger_id}")
 
 
 @app.route("/updatedisplaymessage", methods=["POST"])
