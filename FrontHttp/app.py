@@ -321,6 +321,8 @@ def display_messages():
     json_data = response.json()
 
     display_messages = json_data[charger_id]["displayMesagges"]
+    app.logger.info(display_messages)
+
     try:
         last_id = len(display_messages)
     except Exception as e:
@@ -397,7 +399,7 @@ def display_messages_edit():
 
     display_messages = json_data[charger_id]["displayMesagges"]
 
-    old_msg = {"id": msg_id, "content": display_messages[msg_id - 1]}
+    old_msg = {"id": msg_id, "content": display_messages[msg_id]}
     charger = {
         "id": charger_id,
     }
@@ -431,7 +433,7 @@ def display_messages_edit_post():
     msg_id = request.args.get("msgId", type=int)
     msg = request.form["content"]
     url = f"http://{host_backend}:8080/displayMessage"
-    json = {"id": charger_id, "msg": msg, "msgId": msg_id}
+    json = {"id": charger_id, "msg": msg, "msgId": msg_id + 1}
     response = requests.post(url, json=json)
     return redirect(f"/displaymessages?id={charger_id}")
 
