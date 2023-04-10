@@ -6,7 +6,7 @@ COPY ./requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
 
 
-COPY ./instance /FrontHttp/instance
+# COPY ./instance /FrontHttp/instance
 COPY ./images /FrontHttp/images
 COPY ./templates /FrontHttp/templates
 COPY ./app.py /FrontHttp/app.py
