@@ -287,6 +287,7 @@ class ChargePoint(cp):
 
         if len(self.display_message) < int(message["id"]):
             # new msg
+            message["id"] = len(self.display_message)
             self.display_message.append(message)
         else:
             # edit

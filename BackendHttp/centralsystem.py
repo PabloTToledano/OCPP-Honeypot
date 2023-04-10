@@ -100,7 +100,7 @@ class CentralSystem:
     async def clear_display_message(self, id: str, msg_id: int):
         for cp, task in self._chargers.items():
             if cp.id == id:
-                result = await cp.send_clear_display_messages(1)
+                result = await cp.send_clear_display_messages(msg_id)
                 if result.status == "Acepted":
                     cp.display_message.pop(msg_id - 1)
                 return result.status
