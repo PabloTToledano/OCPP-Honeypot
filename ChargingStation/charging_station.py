@@ -170,16 +170,13 @@ class ChargePoint(cp):
                     variable["variable"]["name"]: variable["attributeValue"]
                 }
 
-            variable_result.append(
-                datatypes.SetVariableResultType(
-                    attribute_status="Accepted",
-                    component=datatypes.ComponentType(
-                        name=variable["component"]["name"]
-                    ),
-                    variable= datatypes.VariableType(name=variable["variable"]["name"])
-                    attribute_type=variable.get("attributeType"),
-                )
+            result = datatypes.SetVariableResultType(
+                attribute_status="Accepted",
+                component=datatypes.ComponentType(name=variable["component"]["name"]),
+                variable=datatypes.VariableType(name=variable["variable"]["name"]),
+                attribute_type=variable.get("attributeType"),
             )
+            variable_result.append(result)
 
         return call_result.SetVariablesPayload(set_variable_result=variable_result)
 

@@ -33,6 +33,7 @@
                                 <th scope="col">Component</th>
                                 <th scope="col">Variable</th>
                                 <th scope="col">Value</th>
+                                <th scope="col">Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -42,6 +43,9 @@
                                 <td>{{ msg.component.name|safe }}</td>
                                 <td>{{ msg.variable.name|safe }}</td>
                                 <td>{{ msg.attribute_value|safe }}</td>
+                                <td> <a href="/updatevariable?id={{ charger.id }}&component={{ msg.component.name }}&variable={{msg.variable.name}}"
+                                        class="btn btn-secondary btn-sm active" role="button"
+                                        aria-pressed="true">Edit</a></td>
                             </tr>
                             {% endfor %}
                         </tbody>

@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+
+<section class="vh-10 gradient-custom">
+    <div class="container py-5 h-100">
+        <div class="row d-flex justify-content-center align-items-center h-100">
+            <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+                <div class="card bg-dark text-white" style="border-radius: 1rem;">
+                    <div class="card-body p-5 text-center">
+
+                        <div class="mb-md-5 mt-md-4 pb-5">
+                            <form
+                                action="{{ url_for('update_variable_post') }}?id={{ charger.id }}&component={{ old_variable.component }}&variable={{old_variable.variable}}"
+                                method="post">
+                                <h2 class="fw-bold mb-2 text-uppercase">Edit variable</h2>
+                                <p class="text-white-50 ">Component: {{ old_variable.component }}</p>
+                                <p class="text-white-50">Variable: {{ old_variable.variable }}</p>
+                                <p class="text-white-50">Value: {{ old_variable.value }}</p>
+                                <td><input class="form-control mb-2" type="text" name="content" id="content" /> </td>
+                                <td><input class="btn btn-primary " type="submit" value="Edit" /></td>
+                            </form>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -421,12 +421,68 @@ def variables():
     )
 
 
+@app.route("/updatevariable", methods=["GET"])
+@login_required
+def update_variable():
+    charger_id = request.args.get("id", type=str)
+    component = request.args.get("component", type=str)
+    variable = request.args.get("variable", type=str)
+    # get variable
+
+    url = f"http://{host_backend}:8080/variables"
+    json = {"id": charger_id}
+    response = requests.get(url, json=json)
+    json_data = response.json()
+
+    variables_dict = json_data["result"]
+    old_variable = {
+        "component": component,
+        "variable": variable,
+    }
+    for variable in variables_dict:
+        app.logger.info(variable)
+        if (
+            variable["component"]["name"] == component
+            and variable["variable"]["name"] == variable
+        ):
+            old_variable["value"] = variable["attributeValue"]
+            break
+    charger = {
+        "id": charger_id,
+    }
+    return render_template(
+        "updatevariable.html",
+        old_variable=old_variable,
+        charger=charger,
+        current_user=current_user,
+    )
+
+
+@app.route("/updatevariable", methods=["POST"])
+@login_required
+def update_variable_post():
+    charger_id = request.args.get("id", type=str)
+    component = request.args.get("component", type=str)
+    variable = request.args.get("variable", type=str)
+    value = request.form["content"]
+    url = f"http://{host_backend}:8080/variable"
+
+    json = {
+        "id": charger_id,
+        "component": component,
+        "variable": variable,
+        "value": value,
+    }
+    response = requests.post(url, json=json)
+    return redirect(f"/variables?id={charger_id}")
+
+
 @app.route("/displaymessages", methods=["POST"])
 @login_required
 def display_messages_post():
     charger_id = request.args.get("id", type=str)
     last_id = request.args.get("lastid", type=int)
-    msg = form_date = request.form["content"]
+    msg = request.form["content"]
     url = f"http://{host_backend}:8080/displayMessage"
     json = {"id": charger_id, "msg": msg, "msgId": last_id + 1}
     response = requests.post(url, json=json)
