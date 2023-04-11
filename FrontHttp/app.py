@@ -426,7 +426,7 @@ def variables():
 def update_variable():
     charger_id = request.args.get("id", type=str)
     component = request.args.get("component", type=str)
-    variable = request.args.get("variable", type=str)
+    variable_name = request.args.get("variable", type=str)
     # get variable
 
     url = f"http://{host_backend}:8080/variables"
@@ -437,15 +437,16 @@ def update_variable():
     variables_dict = json_data["result"]
     old_variable = {
         "component": component,
-        "variable": variable,
+        "variable": variable_name,
     }
+
     for variable in variables_dict:
-        app.logger.info(variable)
         if (
             variable["component"]["name"] == component
-            and variable["variable"]["name"] == variable
+            and variable["variable"]["name"] == variable_name
         ):
-            old_variable["value"] = variable["attributeValue"]
+
+            old_variable["value"] = variable["attribute_value"]
             break
     charger = {
         "id": charger_id,
