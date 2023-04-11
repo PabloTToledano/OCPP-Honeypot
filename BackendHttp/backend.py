@@ -81,7 +81,12 @@ async def set_variables(request):
     data = await request.json()
     csms = request.app["csms"]
     # {"attributeValue":"","component":"",variable:""}
-    await csms.set_variables(data["id"], data.get("variable_data", []))
+    payload = datatypes.SetVariableDataType(
+        attribute_value=data.get("value"),
+        component=datatypes.ComponentType(name=data.get("component")),
+        variable=datatypes.VariableType(data.get("variable")),
+    )
+    await csms.set_variables(data["id"], [payload])
 
     return web.Response(text="OK")
 

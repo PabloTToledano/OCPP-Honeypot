@@ -280,7 +280,7 @@ class ChargePoint(cp):
         # attributeValue, component, variable
 
         request = call.SetVariablesPayload(set_variable_data=variable_data)
-        response = await self.call(request)
+        return await self.call(request)
 
     async def send_get_variables(self, variable_data: list):
         # variable_data must be a list of dict. The dict must comply with GetVariableDataType

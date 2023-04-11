@@ -40,10 +40,11 @@ class CentralSystem:
     #     for cp in self._chargers:
     #         await cp.change_configuration(key, value)
 
-    async def change_variables(self, id: str, variable_data: list):
+    async def set_variables(self, id: str, set_variable_data: list):
         for cp in self._chargers:
             if cp.id == id:
-                await cp.send_set_variables(variable_data)
+                result = await cp.send_set_variables(set_variable_data)
+                return result
 
     async def get_variables(self, id: str, get_variable_data: list):
         for cp in self._chargers:

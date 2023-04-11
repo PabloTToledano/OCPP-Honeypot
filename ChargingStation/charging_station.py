@@ -145,35 +145,42 @@ class ChargePoint(cp):
         # set_variable_data list of dict with contents of SetVariableDataType
         # for every variable respond with a dict of  SetVariableResultType
         # attributeStatus: Accepted, Rejected, UnknownVariable, RebootRequired
+
         variable_result = []
         for variable in set_variable_data:
             # Do something with variable.get("attributeValue")
-            # variable_data = datatypes.SetVariableResultType(attribute_status=enums.SetVariableStatusType.accepted,component=datatypes.ComponentType(name=""),variable=datatypes.VariableType(name="", instance=""))
-            if self.occp_variables.get(variable.get("variable"), None):
-                self.occp_variables[variable.get("variable")] = variable.get(
-                    "attributeValue", ""
-                )
+            # if component exist
+            if self.occp_variables.get(variable["component"]):
+                if self.occp_variables[variable["component"]["name"]].get(
+                    variable["variable"]["name"]
+                ):
+                    # value exist edit
+                    self.occp_variables[variable["component"]["name"]][
+                        variable["variable"]["name"]
+                    ] = variable["attributeValue"]
+                else:
+                    # component exist but not variable
+                    self.occp_variables[variable["component"]["name"]][
+                        variable["variable"]["name"]
+                    ] = variable["attributeValue"]
 
-            match variable.get("variable"):
-                # A05 - Upgrade Charging Station Security Profile
-                case "NetworkConfigurationPriority":
-                    variable_result.append(
-                        {
-                            "attributeType": variable.get("attributeType", "Actual"),
-                            "attributeStatus": "Accepted",
-                            "component": variable.get("component"),
-                            "variable": variable.get("variable"),
-                        }
-                    )
-                case default:
-                    variable_result.append(
-                        {
-                            "attributeType": variable.get("attributeType", "Actual"),
-                            "attributeStatus": "Accepted",
-                            "component": variable.get("component"),
-                            "variable": variable.get("variable"),
-                        }
-                    )
+            else:
+                # compnenet doesnt exist
+                self.occp_variables[variable["component"]["name"]] = {
+                    variable["variable"]["name"]: variable["attributeValue"]
+                }
+
+            variable_result.append(
+                datatypes.SetVariableResultType(
+                    attribute_status="Accepted",
+                    component=datatypes.ComponentType(
+                        name=variable["component"]["name"]
+                    ),
+                    variable= datatypes.VariableType(name=variable["variable"]["name"])
+                    attribute_type=variable.get("attributeType"),
+                )
+            )
+
         return call_result.SetVariablesPayload(set_variable_result=variable_result)
 
     @on("GetVariables")
