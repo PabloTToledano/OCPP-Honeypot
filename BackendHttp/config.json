@@ -1,12 +1,14 @@
 {
-    "type": "CSMS",
-    "IP": "0.0.0.0",
-    "port": "9000",
-    "ssl_key": "/path/to/.key",
-    "ssl_pem": "/path/to/.pem",
-    "security_profile": 1,
-    "logstasth": {
-        "ip": "192.168.31.132",
-        "port": 5959
+    "CSMS": {
+        "type": "CSMS",
+        "IP": "0.0.0.0",
+        "port": "9000",
+        "ssl_key": "/path/to/.key",
+        "ssl_pem": "/path/to/.pem",
+        "security_profile": 1,
+        "logstasth": {
+            "ip": "192.168.31.132",
+            "port": 5959
+        }
     }
 }

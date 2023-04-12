@@ -315,6 +315,7 @@ async def main():
     csms = CentralSystem()
     with open("./config.json") as file:
         config = json.load(file)
+        config = config["CSMS"]
 
     websocket_server = await create_websocket_server(csms, config)
     http_server = await create_http_server(csms)

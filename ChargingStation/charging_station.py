@@ -557,7 +557,7 @@ async def main():
     # load config json
     with open("/config.json") as file:
         config = json.load(file)
-
+    config = config["CP"]
     logging.info("[Charging Point]Using config:")
     logging.info(config)
     ssl_context = None

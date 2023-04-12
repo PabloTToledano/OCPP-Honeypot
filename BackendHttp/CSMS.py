@@ -11,14 +11,8 @@ import json
 import pathlib
 import logstash
 from datetime import datetime
+import websockets
 
-try:
-    import websockets
-except ModuleNotFoundError:
-    print("This honeypot uses the 'websockets' and ocpp package.")
-    import sys
-
-    sys.exit(1)
 
 from ocpp.routing import on
 from ocpp.v201 import ChargePoint as cp
@@ -71,6 +65,7 @@ class ChargePoint(cp):
         try:
             with open("/config.json") as file:
                 config = json.load(file)
+                config = config["CSMS"]
             if config.get("VT_API_KEY", "") != "":
                 self.vt_client = vt.Client(config.get("VT_API_KEY"))
         except:
@@ -436,6 +431,7 @@ async def main(
     security_profile: int,
     logstash_host: str | None,
     logstash_port: int | None,
+    config: dict,
 ):
     logging.info(f"Security profile {security_profile}")
 
@@ -495,7 +491,7 @@ if __name__ == "__main__":
     # load config json
     with open("/config.json") as file:
         config = json.load(file)
-
+    config = config["CSMS"]
     logging.info("[CSMS]Using config:")
     logging.info(config)
 
@@ -506,5 +502,6 @@ if __name__ == "__main__":
             config.get("security_profile", 1),
             config.get("logstasth").get("ip"),
             config.get("logstasth").get("port"),
+            config,
         )
     )

@@ -1,116 +1,118 @@
 {
-    "type": "CP",
-    "CSMS": "ws://csms1:9000/",
-    "VT_API_KEY": "",
-    "connectors": 2,
-    "model": "EA Fast",
-    "vendor_name": "Signet",
-    "ssl_key": "/path/to/.key",
-    "ssl_pem": "/path/to/.pem",
-    "local_CA": "",
-    "username": "user",
-    "password": "password",
-    "logstasth": {
-        "ip": "192.168.31.132",
-        "port": 5959
-    },
-    "OCPP_variables": {
-        "LocalAuthListCtrlr": {
-            "LocalAuthListEntries": "0",
-            "LocalAuthListAvailable": "true",
-            "LocalAuthListEnabled": "true",
-            "ItemsPerMessageSendLocalList": "1",
-            "BytesPerMessageSendLocalList": "1024"
+    "CP": {
+        "type": "CP",
+        "CSMS": "ws://csms1:9000/",
+        "VT_API_KEY": "",
+        "connectors": 2,
+        "model": "EA Fast",
+        "vendor_name": "Signet",
+        "ssl_key": "/path/to/.key",
+        "ssl_pem": "/path/to/.pem",
+        "local_CA": "",
+        "username": "user",
+        "password": "password",
+        "logstasth": {
+            "ip": "192.168.31.132",
+            "port": 5959
         },
-        "TxCtrlr": {
-            "EVConnectionTimeOut": "1",
-            "StopTxOnEVSideDisconnect": "false",
-            "StopTxOnInvalidId": "false",
-            "TxStartPoint": "[]",
-            "TxStopPoint": "[]"
-        },
-        "AlignedDataCtrlr": {
-            "Interval": "1",
-            "Measurands": "[]",
-            "TxEndedInterval": "1",
-            "TxEndedMeasurands": "[]"
-        },
-        "AuthCtrlr": {
-            "AuthorizeRemoteStart": "false",
-            "LocalAuthorizeOffline": "false",
-            "LocalPreAuthorize": "false"
-        },
-        "ChargingStation": {
-            "AvailabilityState": "[]",
-            "Available": "false",
-            "SupplyPhases": "1"
-        },
-        "ClockCtrlr": {
-            "DateTime": "dateTime",
-            "TimeSource": "SequenceList"
-        },
-        "Connector": {
-            "Available": "true",
-            "ConnectorType": "chademo",
-            "SupplyPhases": "1"
-        },
-        "DeviceDataCtrlr": {
-            "BytesPerMessage": "1",
-            "ItemsPerMessage": "1"
-        },
-        "DisplayMessageCtrlr": {
-            "DisplayMessages": "1",
-            "SupportedFormats": "[]",
-            "SupportedPriorities": "[]"
-        },
-        "EVSE": {
-            "AvailabilityState": "[]",
-            "Available": "false",
-            "Power": "1600",
-            "SupplyPhases": "1",
-            "BasicAuthPassword": "password"
-        },
-        "ISO15118Ctrlr": {
-            "ContractValidationOffline": "false"
-        },
-        "MonitoringCtrlr": {
-            "BytesPerMessage": "1",
-            "ItemsPerMessage": "1"
-        },
-        "OCPPCommCtrlr": {
-            "FileTransferProtocols": "[]",
-            "MessageTimeout": "1",
-            "MessageAttemptInterval": "1",
-            "MessageAttempts": "1",
-            "NetworkConfigurationPriority": "ethernet",
-            "NetworkProfileConnectionAttempts": "1",
-            "OfflineThreshold": "1",
-            "ResetRetries": "1",
-            "UnlockOnEVSideDisconnect": "false"
-        },
-        "SampledDataCtrlr": {
-            "TxEndedInterval": "1",
-            "TxEndedMeasurands": "[]",
-            "TxStartedMeasurands": "[]",
-            "TxUpdatedInterval": "1",
-            "TxUpdatedMeasurands": "[]"
-        },
-        "SecurityCtrlr": {
-            "CertificateEntries": "1",
-            "OrganizationName": "Uma",
-            "SecurityProfile": "1"
-        },
-        "SmartChargingCtrlr": {
-            "Entries": "1",
-            "LimitChangeSignificance": "1.5",
-            "PeriodsPerSchedule": "1",
-            "ProfileStackLevel": "1",
-            "RateUnit": "[]"
-        },
-        "TariffCostCtrlr": {
-            "Currency": "EUR",
-            "TariffFallbackMessage": "0.69 EUR/kWh",
-            "TotalCostFallbackMessage": "FREE"
+        "OCPP_variables": {
+            "LocalAuthListCtrlr": {
+                "LocalAuthListEntries": "0",
+                "LocalAuthListAvailable": "true",
+                "LocalAuthListEnabled": "true",
+                "ItemsPerMessageSendLocalList": "1",
+                "BytesPerMessageSendLocalList": "1024"
+            },
+            "TxCtrlr": {
+                "EVConnectionTimeOut": "1",
+                "StopTxOnEVSideDisconnect": "false",
+                "StopTxOnInvalidId": "false",
+                "TxStartPoint": "[]",
+                "TxStopPoint": "[]"
+            },
+            "AlignedDataCtrlr": {
+                "Interval": "1",
+                "Measurands": "[]",
+                "TxEndedInterval": "1",
+                "TxEndedMeasurands": "[]"
+            },
+            "AuthCtrlr": {
+                "AuthorizeRemoteStart": "false",
+                "LocalAuthorizeOffline": "false",
+                "LocalPreAuthorize": "false"
+            },
+            "ChargingStation": {
+                "AvailabilityState": "[]",
+                "Available": "false",
+                "SupplyPhases": "1"
+            },
+            "ClockCtrlr": {
+                "DateTime": "dateTime",
+                "TimeSource": "SequenceList"
+            },
+            "Connector": {
+                "Available": "true",
+                "ConnectorType": "chademo",
+                "SupplyPhases": "1"
+            },
+            "DeviceDataCtrlr": {
+                "BytesPerMessage": "1",
+                "ItemsPerMessage": "1"
+            },
+            "DisplayMessageCtrlr": {
+                "DisplayMessages": "1",
+                "SupportedFormats": "[]",
+                "SupportedPriorities": "[]"
+            },
+            "EVSE": {
+                "AvailabilityState": "[]",
+                "Available": "false",
+                "Power": "1600",
+                "SupplyPhases": "1",
+                "BasicAuthPassword": "password"
+            },
+            "ISO15118Ctrlr": {
+                "ContractValidationOffline": "false"
+            },
+            "MonitoringCtrlr": {
+                "BytesPerMessage": "1",
+                "ItemsPerMessage": "1"
+            },
+            "OCPPCommCtrlr": {
+                "FileTransferProtocols": "[]",
+                "MessageTimeout": "1",
+                "MessageAttemptInterval": "1",
+                "MessageAttempts": "1",
+                "NetworkConfigurationPriority": "ethernet",
+                "NetworkProfileConnectionAttempts": "1",
+                "OfflineThreshold": "1",
+                "ResetRetries": "1",
+                "UnlockOnEVSideDisconnect": "false"
+            },
+            "SampledDataCtrlr": {
+                "TxEndedInterval": "1",
+                "TxEndedMeasurands": "[]",
+                "TxStartedMeasurands": "[]",
+                "TxUpdatedInterval": "1",
+                "TxUpdatedMeasurands": "[]"
+            },
+            "SecurityCtrlr": {
+                "CertificateEntries": "1",
+                "OrganizationName": "Uma",
+                "SecurityProfile": "1"
+            },
+            "SmartChargingCtrlr": {
+                "Entries": "1",
+                "LimitChangeSignificance": "1.5",
+                "PeriodsPerSchedule": "1",
+                "ProfileStackLevel": "1",
+                "RateUnit": "[]"
+            },
+            "TariffCostCtrlr": {
+                "Currency": "EUR",
+                "TariffFallbackMessage": "0.69 EUR/kWh",
+                "TotalCostFallbackMessage": "FREE"
+            }
         }
     }
 }

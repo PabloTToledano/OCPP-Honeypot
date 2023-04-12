@@ -9,7 +9,36 @@ import threading
 # This is not needed when running the containers standalone
 
 
+def deploy(client, number, image):
+    try:
+        ocpp_network = client.networks.get("ocpp")
+
+    except Exception as e:
+        print(f"Creating network ocpp")
+        ocpp_network = client.networks.create("ocpp")
+
+    containers = []
+    print(f"Deploying {number} {image}")
+    for i in range(1, number + 1):
+        try:
+            print(f" Trying to remove old {image}-{i}")
+            old_container = client.containers.get(f"{image}-{i}")
+            # old_container.kill()
+            old_container.remove()
+        except Exception as e:
+            print(f" Not found {image}-{i}: {e}")
+        container = client.containers.create(
+            image, detach=True, name=f"{image}-{i}", network="ocpp"
+        )
+        # ocpp_network.connect(container)
+        containers.append(container)
+        ocpp_network.reload()
+        print(ocpp_network.containers)
+    return containers
+
+
 def main():
+    uri = "unix:///run/user/1000/podman/podman.sock"
     uri = "unix:///run/user/1000/podman/podman.sock"
 
     parser = argparse.ArgumentParser(description="OCPP Honeypot")
@@ -80,20 +109,18 @@ def main():
             with open(args.deploy) as file:
                 config_json = json.load(file)
 
-            type = {"CSMS": "CSMS", "CP": "charging", "ChargingPoint": "charging"}
-            image = type[config_json.get("type", "CP")]
-            print(f"Deploying {args.number} {image}")
-            for i in range(args.number):
-                containers.append(
-                    client.containers.run(image, detach=True, name=f"{image}-{i}")
-                )
+            cp_config = config_json["CP"]
+            csms_config = config_json["CSMS"]
+            containers = deploy(client, 1, "csms")
+            containers = containers + deploy(client, args.number, "charging")
 
+        print("Container IDs:")
         for container in containers:
-            print("Container IDs:")
             print(f"{container.name}: {container.id}")
             if args.print:
                 print(f"podman logs {container.id}")
 
+        for container in containers:
             time.sleep(30)
             container.kill()
             container.remove()
