@@ -150,24 +150,24 @@ class ChargePoint(cp):
         for variable in set_variable_data:
             # Do something with variable.get("attributeValue")
             # if component exist
-            if self.occp_variables.get(variable["component"]):
+            if self.occp_variables.get(variable["component"]["name"]):
                 if self.occp_variables[variable["component"]["name"]].get(
                     variable["variable"]["name"]
                 ):
                     # value exist edit
                     self.occp_variables[variable["component"]["name"]][
                         variable["variable"]["name"]
-                    ] = variable["attributeValue"]
+                    ] = variable["attribute_value"]
                 else:
                     # component exist but not variable
                     self.occp_variables[variable["component"]["name"]][
                         variable["variable"]["name"]
-                    ] = variable["attributeValue"]
+                    ] = variable["attribute_value"]
 
             else:
                 # compnenet doesnt exist
                 self.occp_variables[variable["component"]["name"]] = {
-                    variable["variable"]["name"]: variable["attributeValue"]
+                    variable["variable"]["name"]: variable["attribute_value"]
                 }
 
             result = datatypes.SetVariableResultType(

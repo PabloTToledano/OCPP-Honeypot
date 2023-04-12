@@ -445,7 +445,6 @@ def update_variable():
             variable["component"]["name"] == component
             and variable["variable"]["name"] == variable_name
         ):
-
             old_variable["value"] = variable["attribute_value"]
             break
     charger = {
@@ -466,7 +465,7 @@ def update_variable_post():
     component = request.args.get("component", type=str)
     variable = request.args.get("variable", type=str)
     value = request.form["content"]
-    url = f"http://{host_backend}:8080/variable"
+    url = f"http://{host_backend}:8080/variables"
 
     json = {
         "id": charger_id,
