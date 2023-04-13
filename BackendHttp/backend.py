@@ -134,6 +134,19 @@ async def clear_display_message(request):
     return web.Response(text="OK")
 
 
+async def start_transaction(request):
+    """HTTP handler for deleting the ids of all charge points."""
+    data = await request.json()
+    csms = request.app["csms"]
+    # id=data["id"], msg=data["msg"], msg_id=data["msgId"]
+    id_token = datatypes.IdTokenType(id_token=data["idToken"], type=data["idTokenType"])
+    remote_start_id = 1
+    await csms.start_transaction(
+        data["id"], id_token=id_token, remote_start_id=remote_start_id
+    )
+    return web.Response(text="OK")
+
+
 async def change_status(request):
     """HTTP handler for changing the status of the charge points."""
     data = await request.json()
@@ -298,6 +311,7 @@ async def create_http_server(csms: CentralSystem):
     app.add_routes([web.post("/locallist", set_locallist)])
     app.add_routes([web.post("/update", update_firmware)])
     app.add_routes([web.post("/status", change_status)])
+    app.add_routes([web.post("/startTransaction", start_transaction)])
 
     # Put CSMS in app so it can be accessed from request handlers.
     # https://docs.aiohttp.org/en/stable/faq.html#where-do-i-put-my-database-connection-so-handlers-can-access-it
