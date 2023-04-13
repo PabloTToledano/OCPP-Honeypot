@@ -149,3 +149,12 @@ class CentralSystem:
                 )
                 return result.status
         raise ValueError(f"Charger {id} not connected.")
+
+    async def start_transaction(self, id: str, id_token: dict, remote_start_id: int):
+        for cp, task in self._chargers.items():
+            if cp.id == id:
+                result = await cp.send_remote_start_transaction(
+                    id_token, remote_start_id
+                )
+                return result.status
+        raise ValueError(f"Charger {id} not connected.")

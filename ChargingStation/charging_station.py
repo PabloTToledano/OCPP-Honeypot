@@ -118,6 +118,41 @@ class ChargePoint(cp):
         except Exception as e:
             logging.error(e)
 
+    async def send_transaction(
+        self,
+        event_type: str,
+        timestamp: str,
+        trigger_reason: str,
+        seq_no: int,
+        transaction_info: dict,
+        meter_value: list | None = None,
+        offline: bool | None = None,
+        number_of_phases_used: int | None = None,
+        cable_max_current: int | None = None,
+        reservation_id: int | None = None,
+        evse: dict | None = None,
+        id_token: dict | None = None,
+    ):
+        request = call.TransactionEventPayload(
+            event_type,
+            timestamp,
+            trigger_reason,
+            seq_no,
+            transaction_info,
+            meter_value,
+            offline,
+            number_of_phases_used,
+            cable_max_current,
+            reservation_id,
+            evse,
+            id_token,
+        )
+
+        try:
+            return await self.call(request)
+        except Exception as e:
+            logging.error(e)
+
     async def send_authorize(
         self,
         id_token: dict,
@@ -126,12 +161,9 @@ class ChargePoint(cp):
     ):
         # id_token must be of type IdTokenType
         # Simple example
-        id_token = {
-            "idToken": random.randint(100, 99999),
-            "type": "Local",
-        }
+
         request = call.AuthorizePayload(id_token=id_token)
-        response = await self.call(request)
+        return await self.call(request)
 
     async def send_datatransfer(self):
         request = call.DataTransferPayload(
@@ -302,6 +334,39 @@ class ChargePoint(cp):
             index = int(message["id"]) - 1
             self.display_message[index] = message
         return call_result.SetDisplayMessagePayload(status="Accepted")
+
+    # F .Remote Control
+    @on("RequestStartTransaction")
+    def on_request_start_transaction(
+        self,
+        id_token: dict,
+        remote_start_id: int,
+        evse_id: int | None = None,
+        group_id_token: dict | None = None,
+        charging_profile: dict | None = None,
+        **kwargs,
+    ):
+        self.remote_start_id = remote_start_id
+        self.id_token = id_token
+        return call_result.RequestStartTransactionPayload(status="Accepted")
+
+    @after("RequestStartTransaction")
+    async def after_request_start_transaction(self, **kwargs):
+        # AuthorizeRequest
+        result = await self.send_authorize(self.id_token)
+        if result.id_token_info.status == enums.AuthorizationStatusType.accepted:
+            # TransactionEventRequest
+            transaction_info = datatypes.TransactionType(
+                transaction_id=uuid.uuid4(), remote_start_id=self.remote_start_id
+            )
+            result = await self.send_transaction(
+                event_type="Started",
+                timestamp=datetime.now().isoformat(),
+                trigger_reason="RemoteStart",
+                seq_no=1,
+                transaction_info=transaction_info,
+                id_token=self.id_token,
+            )
 
     @on("GetDisplayMessages")
     def on_get_display_messages(

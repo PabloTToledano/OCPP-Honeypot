@@ -89,7 +89,6 @@ class ChargePoint(cp):
         iso15118_certificate_hash_data: list | None = None,
         **kwargs,
     ):
-        # Must accept everything so that the attacker believes he/she has access
         return call_result.AuthorizePayload(
             id_token_info={
                 "status": "Accepted",
@@ -262,6 +261,19 @@ class ChargePoint(cp):
         self, type: str, timestamp: str, tech_info: str | None = None, **kwargs
     ):
         return call_result.SecurityEventNotificationPayload()
+
+    async def send_remote_start_transaction(
+        self,
+        id_token: dict,
+        remote_start_id: int,
+        evse_id: int | None = None,
+        group_id_token: dict | None = None,
+        charging_profile: dict | None = None,
+    ):
+        request = call.RequestStartTransactionPayload(
+            id_token, remote_start_id, evse_id, group_id_token, charging_profile
+        )
+        return await self.call(request)
 
     async def send_data_transfer(self):
         request = call.DataTransferPayload(
