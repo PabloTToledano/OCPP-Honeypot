@@ -3,14 +3,19 @@
 {% block content %}
 </br>
 <div class="container">
-    <h1>LocalList</h1>
+    <div class="jumbotron jumbotron-fluid">
+        <div class="container">
+            <h1 class="display-4">LocalList</h1>
+            <p class="lead">Add elements to the LocalList</p>
+        </div>
+    </div>
+
     <hr class="hr hr-blurry" />
     <div class="content" style="text-align: center">
 
         <div class="container py-2 h-100 px-1000">
             <div class="form-group mb-2">
                 <div class="form-group mx-sm-3 mb-2">
-                    <p class="text-center">Add an element to LocalList.</p>
                     <form action="/locallist?id={{args.charger_id}}" method="POST">
                         <div class="input-group mb-3 ">
                             <div class="input-group-prepend">

@@ -421,6 +421,40 @@ def variables():
     )
 
 
+@app.route("/startTransaction")
+@login_required
+def start_transaction():
+    charger_id = request.args.get("id", type=str)
+
+    charger = {"id": charger_id}
+
+    return render_template(
+        "authorize.html",
+        charger=charger,
+        current_user=current_user,
+    )
+
+
+@app.route("/startTransaction", methods=["POST"])
+@login_required
+def start_transaction_post():
+    charger_id = request.args.get("id", type=str)
+
+    idToken = request.form["content"]
+    type = request.form["inputType"]
+    charger = {"id": charger_id}
+
+    url = f"http://{host_backend}:8080/startTransaction"
+    json = {"id": charger_id, "idToken": idToken, "idTokenType": type}
+    response = requests.post(url, json=json)
+    flash("StartTransaction sent")
+    return render_template(
+        "authorize.html",
+        charger=charger,
+        current_user=current_user,
+    )
+
+
 @app.route("/updatevariable", methods=["GET"])
 @login_required
 def update_variable():
