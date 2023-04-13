@@ -141,6 +141,7 @@ async def start_transaction(request):
     # id=data["id"], msg=data["msg"], msg_id=data["msgId"]
     id_token = datatypes.IdTokenType(id_token=data["idToken"], type=data["idTokenType"])
     remote_start_id = 1
+    enums.IdTokenType.local
     await csms.start_transaction(
         data["id"], id_token=id_token, remote_start_id=remote_start_id
     )

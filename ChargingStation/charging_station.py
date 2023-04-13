@@ -346,18 +346,20 @@ class ChargePoint(cp):
         charging_profile: dict | None = None,
         **kwargs,
     ):
-        self.remote_start_id = remote_start_id
-        self.id_token = id_token
         return call_result.RequestStartTransactionPayload(status="Accepted")
 
     @after("RequestStartTransaction")
-    async def after_request_start_transaction(self, **kwargs):
+    async def after_request_start_transaction(
+        self, id_token: dict, remote_start_id: int, **kwargs
+    ):
+        pass
+        logging.info(id_token)
         # AuthorizeRequest
-        result = await self.send_authorize(self.id_token)
-        if result.id_token_info.status == enums.AuthorizationStatusType.accepted:
+        result = await self.send_authorize(id_token)
+        if result.id_token_info["status"] == enums.AuthorizationStatusType.accepted:
             # TransactionEventRequest
             transaction_info = datatypes.TransactionType(
-                transaction_id=uuid.uuid4(), remote_start_id=self.remote_start_id
+                transaction_id=str(uuid.uuid4()), remote_start_id=remote_start_id
             )
             result = await self.send_transaction(
                 event_type="Started",
@@ -365,7 +367,7 @@ class ChargePoint(cp):
                 trigger_reason="RemoteStart",
                 seq_no=1,
                 transaction_info=transaction_info,
-                id_token=self.id_token,
+                id_token=id_token,
             )
 
     @on("GetDisplayMessages")
