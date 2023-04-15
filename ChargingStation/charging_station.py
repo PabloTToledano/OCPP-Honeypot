@@ -370,6 +370,33 @@ class ChargePoint(cp):
                 id_token=id_token,
             )
 
+    # F .Remote Stop Control
+    @on("RequestStopTransaction")
+    def on_request_stop_transaction(
+        self,
+        transaction_id: str,
+        **kwargs,
+    ):
+        return call_result.RequestStopTransactionPayload(status="Accepted")
+
+    @after("RequestStopTransaction")
+    async def after_request_stop_transaction(
+        self,
+        transaction_id: str,
+        **kwargs,
+    ):
+        # TransactionEventRequest(eventType = Updated, chargingState = EVConnected,triggerReason = RemoteStop, ...)
+        transaction_info = datatypes.TransactionType(
+            transaction_id=str(uuid.uuid4()), remote_start_id=transaction_id
+        )
+        result = await self.send_transaction(
+            event_type="Updated",
+            timestamp=datetime.now().isoformat(),
+            trigger_reason="RemoteStop",
+            seq_no=2,
+            transaction_info=transaction_info,
+        )
+
     @on("GetDisplayMessages")
     def on_get_display_messages(
         self,
@@ -594,18 +621,6 @@ class ChargePoint(cp):
         await self.send_firmware_status_notification("Installing")
         time.sleep(random.randint(4, 20))
         await self.send_firmware_status_notification("Installed")
-
-    @on("RequestStartTransaction")
-    def on_request_start_transaction(
-        self,
-        id_token: dict,
-        remote_start_id: int,
-        evse_id: int | None = None,
-        group_id_token: dict | None = None,
-        charging_profile: dict | None = None,
-        **kwargs,
-    ):
-        return call_result.RequestStartTransactionPayload(status="Accepted")
 
     @on("SetChargingProfile")
     def on_set_charging_profile(
