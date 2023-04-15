@@ -158,3 +158,10 @@ class CentralSystem:
                 )
                 return result.status
         raise ValueError(f"Charger {id} not connected.")
+
+    async def stop_transaction(self, id: str, transaction_id: str):
+        for cp, task in self._chargers.items():
+            if cp.id == id:
+                result = await cp.send_remote_stop_transaction(transaction_id)
+                return result.status
+        raise ValueError(f"Charger {id} not connected.")

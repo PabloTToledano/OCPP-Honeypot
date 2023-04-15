@@ -135,16 +135,25 @@ async def clear_display_message(request):
 
 
 async def start_transaction(request):
-    """HTTP handler for deleting the ids of all charge points."""
+    """HTTP handler for starting a remote transaction."""
     data = await request.json()
     csms = request.app["csms"]
     # id=data["id"], msg=data["msg"], msg_id=data["msgId"]
     id_token = datatypes.IdTokenType(id_token=data["idToken"], type=data["idTokenType"])
     remote_start_id = 1
-    enums.IdTokenType.local
     await csms.start_transaction(
         data["id"], id_token=id_token, remote_start_id=remote_start_id
     )
+    return web.Response(text="OK")
+
+
+async def stop_transaction(request):
+    """HTTP handler for stopping a transaction."""
+    data = await request.json()
+    csms = request.app["csms"]
+    # id=data["id"], msg=data["transactionId"]
+
+    await csms.stop_transaction(data["id"], data["transactionId"])
     return web.Response(text="OK")
 
 
