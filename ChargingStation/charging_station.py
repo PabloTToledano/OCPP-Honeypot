@@ -439,7 +439,7 @@ class ChargePoint(cp):
     ):
         match requested_message:
             case "BootNotification":
-                self.send_boot_notification_once()
+                await self.send_boot_notification_once()
                 pass
             case "LogStatusNotification":
                 pass
@@ -455,14 +455,14 @@ class ChargePoint(cp):
             case "SignV2GCertificate":
                 pass
             case "StatusNotification":
-                self.send_status_notification()
+                await self.send_status_notification()
                 pass
             case "TransactionEvent":
                 # eventType = Updated, trigger = Trigger, evse.id = 1, chargingState = Charging
                 transaction_info = datatypes.TransactionType(
                     transaction_id=str(uuid.uuid4())
                 )
-                self.send_transaction(
+                await self.send_transaction(
                     event_type=enums.TransactionEventType.updated,
                     trigger_reason=enums.TriggerReasonType.trigger,
                     timestamp=datetime.now().isoformat(),
