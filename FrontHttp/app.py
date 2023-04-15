@@ -429,9 +429,7 @@ def start_transaction():
     charger = {"id": charger_id}
 
     return render_template(
-        "authorize.html",
-        charger=charger,
-        current_user=current_user,
+        "authorize.html", charger=charger, current_user=current_user, start=True
     )
 
 
@@ -449,9 +447,29 @@ def start_transaction_post():
     response = requests.post(url, json=json)
     flash("StartTransaction sent")
     return render_template(
-        "authorize.html",
-        charger=charger,
-        current_user=current_user,
+        "authorize.html", charger=charger, current_user=current_user, start=False
+    )
+
+
+@app.route("/stopTransaction", methods=["POST"])
+@login_required
+def stop_transaction_post():
+    charger_id = request.args.get("id", type=str)
+
+    transactionId = request.form.get("transactionId", 1)
+    charger = {"id": charger_id}
+
+    url = f"http://{host_backend}:8080/stopTransaction"
+    json = {"id": charger_id, "transactionId": transactionId}
+    if transactionId == 1:
+        start = False
+    else:
+        start = True
+
+    response = requests.post(url, json=json)
+    flash("StopTransaction sent")
+    return render_template(
+        "authorize.html", charger=charger, current_user=current_user, start=start
     )
 
 

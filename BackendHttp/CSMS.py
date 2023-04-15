@@ -276,7 +276,7 @@ class ChargePoint(cp):
         return await self.call(request)
 
     async def send_remote_stop_transaction(self, transaction_id: str):
-        request = call.RequestStopTransactionPayload()
+        request = call.RequestStopTransactionPayload(transaction_id)
         return await self.call(request)
 
     async def send_data_transfer(self):
