@@ -322,6 +322,7 @@ async def create_http_server(csms: CentralSystem):
     app.add_routes([web.post("/update", update_firmware)])
     app.add_routes([web.post("/status", change_status)])
     app.add_routes([web.post("/startTransaction", start_transaction)])
+    app.add_routes([web.post("/stopTransaction", stop_transaction)])
 
     # Put CSMS in app so it can be accessed from request handlers.
     # https://docs.aiohttp.org/en/stable/faq.html#where-do-i-put-my-database-connection-so-handlers-can-access-it
