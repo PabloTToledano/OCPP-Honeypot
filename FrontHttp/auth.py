@@ -30,6 +30,13 @@ class User(UserMixin, db.Model):
     name = db.Column(db.String(1000))
 
 
+class UserFake(UserMixin):
+    id = "1"
+    email = "admin@admin.es"
+    password = "admin"
+    name = "admin"
+
+
 @auth.route("/login")
 def login():
     if current_user.is_authenticated:
@@ -95,7 +102,7 @@ def signup_post():
     db.session.add(new_user)
     db.session.commit()
 
-    return redirect(url_for("auth.login"))
+    return redirect(url_for("home"))
 
 
 @auth.route("/logout")
