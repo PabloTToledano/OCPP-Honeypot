@@ -206,7 +206,7 @@ def status_post():
     charger_id = request.args.get("id", type=str)
     connector = request.args.get("connector", default="0", type=str)
     args = {"charger_id": charger_id, "connector": connector}
-    app.logger.info(request.form)
+
     new_status = request.form["inputStatus"]
 
     url = f"http://{host_backend}:8080/status"
@@ -214,6 +214,30 @@ def status_post():
     response = requests.post(url, json=json)
 
     return redirect(f"/charger?id={charger_id}")
+
+
+@app.route("/trigger")
+@login_required
+def trigger():
+    charger_id = request.args.get("id", type=str)
+    charger = {"id": charger_id}
+
+    return render_template("trigger.html", charger=charger, current_user=current_user)
+
+
+@app.route("/trigger", methods=["POST"])
+@login_required
+def trigger_post():
+    charger_id = request.args.get("id", type=str)
+    charger = {"id": charger_id}
+
+    message_type = request.form["inputType"]
+
+    url = f"http://{host_backend}:8080/triggerMessage"
+    json = {"id": charger_id, "requestedMessage": message_type}
+    response = requests.post(url, json=json)
+    flash("Trigger sent")
+    return redirect(f"/trigger?id={charger_id}")
 
 
 @app.route("/update")

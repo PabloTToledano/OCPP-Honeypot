@@ -352,6 +352,14 @@ class ChargePoint(cp):
         request = call.GetLocalListVersionPayload()
         return await self.call(request)
 
+    async def send_trigger_message(
+        self, requested_message: str, evse: dict | None = None
+    ):
+        request = call.TriggerMessagePayload(
+            requested_message=requested_message, evse=evse
+        )
+        return await self.call(request)
+
     async def send_set_display_messages(self, message):
         request = call.SetDisplayMessagePayload(message=message)
         return await self.call(request)

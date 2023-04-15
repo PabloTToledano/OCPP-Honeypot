@@ -88,6 +88,10 @@ class ChargePoint(cp):
             await self.call(request)
             await asyncio.sleep(interval)
 
+    async def send_heartbeat_once(self, interval):
+        request = call.HeartbeatPayload()
+        await self.call(request)
+
     async def send_status_notification(self):
         for index in range(len(self.connector_status)):
             if self.connector_status[index] == "Operative":
@@ -115,6 +119,16 @@ class ChargePoint(cp):
                 # send connectors status
                 await self.send_status_notification()
                 await self.send_heartbeat(response.interval)
+        except Exception as e:
+            logging.error(e)
+
+    async def send_boot_notification_once(self):
+        request = call.BootNotificationPayload(
+            charging_station={"model": self.model, "vendor_name": self.vendor},
+            reason=enums.BootReasonType.remote_reset,
+        )
+        try:
+            response = await self.call(request)
         except Exception as e:
             logging.error(e)
 
@@ -396,6 +410,69 @@ class ChargePoint(cp):
             seq_no=2,
             transaction_info=transaction_info,
         )
+
+    @on("TriggerMessage")
+    def on_trigger_message(
+        self,
+        requested_message: str,
+        evse: dict | None = None,
+        **kwargs,
+    ):
+        if (
+            requested_message
+            == enums.MessageTriggerType.sign_charging_station_certificate
+            or requested_message == enums.MessageTriggerType.sign_v2g_certificate
+            or requested_message
+            == enums.MessageTriggerType.sign_charging_station_certificate
+        ):
+            return call_result.TriggerMessagePayload(
+                status=enums.GenericStatusType.rejected
+            )
+        return call_result.TriggerMessagePayload(status="Accepted")
+
+    @after("TriggerMessage")
+    async def after_trigger_message(
+        self,
+        requested_message: str,
+        evse: dict | None = None,
+        **kwargs,
+    ):
+        match requested_message:
+            case "BootNotification":
+                self.send_boot_notification_once()
+                pass
+            case "LogStatusNotification":
+                pass
+            case "FirmwareStatusNotification":
+                await self.send_firmware_status_notification("Installed")
+            case "Heartbeat":
+                self.send_heartbeat_once()
+                pass
+            case "MeterValues":
+                pass
+            case "SignChargingStationCertificate":
+                pass
+            case "SignV2GCertificate":
+                pass
+            case "StatusNotification":
+                self.send_status_notification()
+                pass
+            case "TransactionEvent":
+                # eventType = Updated, trigger = Trigger, evse.id = 1, chargingState = Charging
+                transaction_info = datatypes.TransactionType(
+                    transaction_id=str(uuid.uuid4())
+                )
+                self.send_transaction(
+                    event_type=enums.TransactionEventType.updated,
+                    trigger_reason=enums.TriggerReasonType.trigger,
+                    timestamp=datetime.now().isoformat(),
+                    seq_no=1,
+                    transaction_info=transaction_info,
+                )
+            case "SignCombinedCertificate":
+                pass
+            case "PublishFirmwareStatusNotification":
+                pass
 
     @on("GetDisplayMessages")
     def on_get_display_messages(

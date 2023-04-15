@@ -147,6 +147,15 @@ async def start_transaction(request):
     return web.Response(text="OK")
 
 
+async def trigger_msg(request):
+    """HTTP handler for triggerMSG."""
+    data = await request.json()
+    csms = request.app["csms"]
+    # id=data["id"], msg=data["msg"], msg_id=data["msgId"]
+    await csms.trigger_message(data["id"], data["requestedMessage"])
+    return web.Response(text="OK")
+
+
 async def stop_transaction(request):
     """HTTP handler for stopping a transaction."""
     data = await request.json()
@@ -323,12 +332,11 @@ async def create_http_server(csms: CentralSystem):
     app.add_routes([web.post("/status", change_status)])
     app.add_routes([web.post("/startTransaction", start_transaction)])
     app.add_routes([web.post("/stopTransaction", stop_transaction)])
+    app.add_routes([web.post("/triggerMessage", trigger_msg)])
 
     # Put CSMS in app so it can be accessed from request handlers.
-    # https://docs.aiohttp.org/en/stable/faq.html#where-do-i-put-my-database-connection-so-handlers-can-access-it
     app["csms"] = csms
 
-    # https://docs.aiohttp.org/en/stable/web_advanced.html#application-runners
     runner = web.AppRunner(app)
     await runner.setup()
 
