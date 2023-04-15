@@ -88,7 +88,7 @@ class ChargePoint(cp):
             await self.call(request)
             await asyncio.sleep(interval)
 
-    async def send_heartbeat_once(self, interval):
+    async def send_heartbeat_once(self):
         request = call.HeartbeatPayload()
         await self.call(request)
 
