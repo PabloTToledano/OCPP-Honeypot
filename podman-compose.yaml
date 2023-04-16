@@ -1,0 +1,40 @@
+version: "3"
+
+networks:
+  ocppBack:
+    driver: bridge
+  ocppFront:
+    driver: bridge
+
+services:
+  backOCPP:
+    image: back
+    restart: unless-stopped
+    build: ./BackendHttp
+    networks:
+      - ocppBack
+      - occpFront
+
+  frontOCPP:
+    container_name: frontHttp
+    restart: unless-stopped
+    build: ./FrontHtpp
+    depends_on:
+      - backOCPP
+    networks:
+      - occpFront
+    ports:
+      - "5000"
+    environment:
+      # - PYTHONUNBUFFERED=1 # see prints
+
+  charger:
+    container_name: charger
+    restart: unless-stopped
+    build: ./ChargingStation
+    # volumes:
+    #   - ./config.json:/config.json
+    networks:
+      - ocppBack
+    environment:
+      - PYTHONUNBUFFERED=1 # see prints

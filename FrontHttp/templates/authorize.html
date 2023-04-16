@@ -1,0 +1,99 @@
+{% extends "layout.html" %}
+
+{% block content %}
+</br>
+<div class="container">
+    <div class="jumbotron jumbotron-fluid">
+        <div class="container">
+            <h1 class="display-4">Transactions</h1>
+
+        </div>
+    </div>
+
+    <hr class="hr hr-blurry" />
+
+
+    <div class="content" style="text-align: center">
+
+        <div class="container py-2 h-100 px-1000">
+            <div class="form-group mb-2">
+                <div class="form-group mx-sm-3 mb-2">
+
+                    {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                    <div class="alert alert-success" role="alert">
+                        {{ messages[0] }}
+                    </div>
+                    {% endif %}
+                    {% endwith %}
+
+                    {% if start %}
+                    <p class="lead">StartTransactionRequest with Authorize request</p>
+                    <form action="/startTransaction?id={{charger.id}}" method="POST">
+                        <div class="input-group mb-3 ">
+                            <div class="input-group-prepend">
+                                <label class="input-group-text" for="inputGroupSelect01">IdToken</label>
+                            </div>
+                            <input class="form-control" type="text" name="content" id="content" />
+
+                            <div class="input-group-prepend ps-3">
+                                <label class="input-group-text" for="inputGroupSelect01">Type</label>
+                            </div>
+                            <select class="custom-select" name="inputType" id="inputType">
+                                <option value="Central">Central</option>
+                                <option value="eMAID">eMAID</option>
+                                <option value="ISO14443">ISO14443</option>
+                                <option value="ISO15693">ISO15693</option>
+                                <option value="KeyCode">KeyCode</option>
+                                <option value="Local">Local</option>
+                                <option value="MacAddress">MacAddress</option>
+                                <option value="NoAuthorization">NoAuthorization</option>
+                            </select>
+
+
+                            <button class="btn btn-primary" type="submit">Send</button>
+                        </div>
+                    </form>
+                    {% else %}
+                    <p class="lead">StopTransaction last sent transaction</p>
+                    <form action="/stopTransaction?id={{charger.id}}" method="POST">
+                        <div class="input-group mb-3 ">
+                            <div class="content" style="text-align: center">
+                                <button class="btn btn-primary" type="submit">Stop</button>
+                            </div>
+
+                        </div>
+                    </form>
+
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <hr class="hr hr-blurry" />
+
+        <div class="content" style="text-align: center">
+
+            <div class="container py-2 h-100 px-1000">
+                <div class="form-group mb-2">
+                    <div class="form-group mx-sm-3 mb-2">
+
+                        <p class="lead">StopTransaction</p>
+                        <form action="/stopTransaction?id={{charger.id}}" method="POST">
+                            <div class="input-group mb-3 ">
+                                <div class="input-group-prepend">
+                                    <label class="input-group-text" for="inputGroupSelect01">TransactionId</label>
+                                </div>
+                                <input class="form-control" type="text" name="transactionId" id="transactionId" />
+                                <button class="btn btn-primary" type="submit">Send</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <hr class="hr hr-blurry" />
+
+        </div>
+
+    </div>
+    {% endblock %}

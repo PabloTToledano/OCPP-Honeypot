@@ -1,0 +1,74 @@
+{% extends "layout.html" %}
+
+{% block content %}
+</br>
+<div class="container">
+
+    <div class="jumbotron jumbotron-fluid">
+        <div class="container">
+            <h1 class="display-4">DisplayMessages</h1>
+            <p class="lead"></p>
+        </div>
+    </div>
+    <hr class="hr hr-blurry" />
+
+    <div class="content" style="text-align: center">
+
+        <div class="container py-2 h-100 px-1000">
+            <div class="form-group mb-2">
+                <div class="form-group mx-sm-3 mb-2">
+                    <form action="/displaymessages?id={{charger.id}}&lastid={{charger.lastid}}" method="POST">
+                        <div class="input-group mb-3 ">
+                            <input class="form-control" type="text" name="content" id="content" />
+                            <button class="btn btn-primary" type="submit">Add Display Message</button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
+        <hr class="hr hr-blurry" />
+
+        {% if msgs|length < 1 %} <h4 style="text-align: center">There are no Display Messages</h4>
+            {% else %}
+            <div class="container py-2 h-100">
+                <div class="table-responsive-md">
+                    <table class="table table-bordered">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th scope="col">ID</th>
+                                <th scope="col">DisplayMessage</th>
+                                <th scope="col">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for msg in msgs %}
+                            <tr>
+                                <td>{{ msg.id|safe }}</td>
+                                <td>{{ msg.message.content|safe }}</td>
+                                <td>
+
+                                    <div class="btn-group">
+                                        <a href="/updatedisplaymessage?id={{ charger.id }}&msgId={{ msg.id }}"
+                                            class="btn btn-secondary btn-sm active" role="button"
+                                            aria-pressed="true">Edit</a>
+                                        {% if msgs|length > 1 %}
+                                        <a href="/deletedisplaymessage?id={{ charger.id }}&msgId={{ msg.id }}"
+                                            class="btn btn-danger btn-sm active" role="button"
+                                            aria-pressed="true">Delete</a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {% endif %}
+    </div>
+
+</div>
+{% endblock %}

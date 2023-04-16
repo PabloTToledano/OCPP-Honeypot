@@ -11,14 +11,8 @@ import json
 import pathlib
 import logstash
 from datetime import datetime
+import websockets
 
-try:
-    import websockets
-except ModuleNotFoundError:
-    print("This honeypot uses the 'websockets' and ocpp package.")
-    import sys
-
-    sys.exit(1)
 
 from ocpp.routing import on
 from ocpp.v201 import ChargePoint as cp
@@ -26,6 +20,7 @@ from ocpp.v201 import call_result, call
 
 
 logging.basicConfig(level=logging.INFO)
+LOGGER = logging.getLogger("ocpp")
 
 
 class LoggerLogstash(object):
@@ -63,13 +58,16 @@ class ChargePoint(cp):
         self.charger_station = None
         self.connectors = {}
         self.display_message = []
+        self.local_list = []
+        self.update_status = ""
         self.vt_client = None
         # Only create virus total client if token is found
         try:
             with open("/config.json") as file:
                 config = json.load(file)
+                config = config["CSMS"]
             if config.get("VT_API_KEY", "") != "":
-                vt_client = vt.Client(config.get("VT_API_KEY"))
+                self.vt_client = vt.Client(config.get("VT_API_KEY"))
         except:
             pass
 
@@ -91,7 +89,6 @@ class ChargePoint(cp):
         iso15118_certificate_hash_data: list | None = None,
         **kwargs,
     ):
-        # Must accept everything so that the attacker believes he/she has access
         return call_result.AuthorizePayload(
             id_token_info={
                 "status": "Accepted",
@@ -201,7 +198,7 @@ class ChargePoint(cp):
         if self.vt_client:
             try:
                 data = io.StringIO(data)
-                analysis = self.client.scan_file(data, wait_for_completion=True)
+                analysis = self.vt_client.scan_file(data, wait_for_completion=True)
                 LOGGER.info(f"VirusTotal analysis: {analysis.stats}")
             except Exception as e:
                 # usually due to invalid virustotal api key
@@ -265,6 +262,23 @@ class ChargePoint(cp):
     ):
         return call_result.SecurityEventNotificationPayload()
 
+    async def send_remote_start_transaction(
+        self,
+        id_token: dict,
+        remote_start_id: int,
+        evse_id: int | None = None,
+        group_id_token: dict | None = None,
+        charging_profile: dict | None = None,
+    ):
+        request = call.RequestStartTransactionPayload(
+            id_token, remote_start_id, evse_id, group_id_token, charging_profile
+        )
+        return await self.call(request)
+
+    async def send_remote_stop_transaction(self, transaction_id: str):
+        request = call.RequestStopTransactionPayload(transaction_id)
+        return await self.call(request)
+
     async def send_data_transfer(self):
         request = call.DataTransferPayload(
             vendor_id="",
@@ -277,7 +291,7 @@ class ChargePoint(cp):
         # attributeValue, component, variable
 
         request = call.SetVariablesPayload(set_variable_data=variable_data)
-        response = await self.call(request)
+        return await self.call(request)
 
     async def send_get_variables(self, variable_data: list):
         # variable_data must be a list of dict. The dict must comply with GetVariableDataType
@@ -321,19 +335,30 @@ class ChargePoint(cp):
         version_number: int,
         update_type: str,
         local_authorization_list: list | None = None,
+        local_authorization_list_dict: list | None = None,
     ):
         request = call.SendLocalListPayload(
             version_number=version_number,
             update_type=update_type,
             local_authorization_list=local_authorization_list,
         )
-        response = await self.call(request)
+        self.local_list = local_authorization_list_dict
+
+        return await self.call(request)
 
     async def send_get_localist(
         self,
     ):
         request = call.GetLocalListVersionPayload()
-        response = await self.call(request)
+        return await self.call(request)
+
+    async def send_trigger_message(
+        self, requested_message: str, evse: dict | None = None
+    ):
+        request = call.TriggerMessagePayload(
+            requested_message=requested_message, evse=evse
+        )
+        return await self.call(request)
 
     async def send_set_display_messages(self, message):
         request = call.SetDisplayMessagePayload(message=message)
@@ -345,6 +370,26 @@ class ChargePoint(cp):
         request = call.GetDisplayMessagesPayload(
             request_id, id=id, priority=priority, state=state
         )
+        return await self.call(request)
+
+    async def send_clear_display_messages(self, id):
+        request = call.ClearDisplayMessagePayload(id)
+        return await self.call(request)
+
+    async def send_update_firmware(
+        self,
+        request_id: int,
+        firmware,
+        retries: int | None = None,
+        retry_interval: int | None = None,
+    ):
+        request = call.UpdateFirmwarePayload(request_id, firmware=firmware)
+        return await self.call(request)
+
+    async def send_change_availability(
+        self, operational_status: str, evse: dict | None = None
+    ):
+        request = call.ChangeAvailabilityPayload(operational_status, evse)
         return await self.call(request)
 
 
@@ -410,6 +455,7 @@ async def main(
     security_profile: int,
     logstash_host: str | None,
     logstash_port: int | None,
+    config: dict,
 ):
     logging.info(f"Security profile {security_profile}")
 
@@ -469,7 +515,7 @@ if __name__ == "__main__":
     # load config json
     with open("/config.json") as file:
         config = json.load(file)
-
+    config = config["CSMS"]
     logging.info("[CSMS]Using config:")
     logging.info(config)
 
@@ -480,5 +526,6 @@ if __name__ == "__main__":
             config.get("security_profile", 1),
             config.get("logstasth").get("ip"),
             config.get("logstasth").get("port"),
+            config,
         )
     )

@@ -1,11 +1,15 @@
 {
     "type": "CP",
-    "ID": "cp",
     "CSMS": "ws://csms1:9000/",
     "VT_API_KEY": "",
     "OCPP_variables": {
-        "BasicAuthPassword": "password",
-        "NetworkConfigurationPriority": []
+        "evse": {
+            "BasicAuthPassword": "password",
+            "placeholder": "empty"
+        },
+        "powergrid": {
+            "MaxAmperage": "10"
+        }
     },
     "connectors": 2,
     "model": "EA Fast",
@@ -16,7 +20,7 @@
     "username": "user",
     "password": "password",
     "logstasth": {
-        "ip": "localhost",
+        "ip": "192.168.31.132",
         "port": 5959
     }
 }

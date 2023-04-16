@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+
+{% block content %}
+</br>
+<div class="container">
+    <div class="jumbotron jumbotron-fluid">
+        <div class="container">
+            <h1 class="display-4">Update Firmware</h1>
+            <p class="lead">Please provide a Firmware URL where the ChargePoint can download the update</p>
+        </div>
+    </div>
+
+    <div class="content" style="text-align: center">
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="alert alert-success" role="alert">
+            {{ messages[0] }}
+        </div>
+        {% endif %}
+        {% endwith %}
+        <div class="container py-2 h-100 px-1000">
+            <div class="form-group mb-2">
+                <div class="form-group mx-sm-3 mb-2">
+                    <form action="/update?id={{args.charger_id}}" method="POST">
+                        <div class="input-group mb-3 ">
+                            <input class="form-control" type="text" name="content" id="content" />
+                            <button class="btn btn-primary" type="submit">Update Firmware</button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+    {% endblock %}

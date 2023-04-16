@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+
+<section class="vh-10 gradient-custom">
+    <div class="container py-5 h-100">
+        <div class="row d-flex justify-content-center align-items-center h-100">
+            <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+                <div class="card bg-dark text-white" style="border-radius: 1rem;">
+                    <div class="card-body p-5 text-center">
+                        {% with messages = get_flashed_messages() %}
+                        {% if messages %}
+                        <div class="alert alert-danger" role="alert">
+                            {{ messages[0] }}
+                        </div>
+                        {% endif %}
+                        {% endwith %}
+                        <div class="mb-md-5 mt-md-4 pb-5">
+                            <form action="/status?id={{ args.charger_id }}&connector={{ args.connector }}"
+                                method="post">
+                                <h2 class="fw-bold mb-2 text-uppercase">Change status</h2>
+                                <p class="text-white-50 mb-5">Connector {{args.connector}}</p>
+                                <div class="input-group  ">
+                                    <select class="form-control form-control-lg" name="inputStatus" id="inputStatus">
+                                        <option value="Operative">Operative</option>
+                                        <option value="Inoperative">Inoperative</option>
+                                    </select>
+                                    <input class="btn btn-primary" type="submit" value="Change" />
+                                </div>
+                            </form>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

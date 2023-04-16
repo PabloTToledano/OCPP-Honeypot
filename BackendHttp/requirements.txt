@@ -1,0 +1,7 @@
+aiohttp
+aiodns
+aiohttp-jinja2
+ocpp
+websockets
+vt-py
+python-logstash

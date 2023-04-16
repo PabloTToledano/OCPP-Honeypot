@@ -1,0 +1,94 @@
+{% extends "layout.html" %}
+
+{% block content %}
+</br>
+<div class="container">
+    <div class="jumbotron jumbotron-fluid">
+        <div class="container">
+            <h1 class="display-4">LocalList</h1>
+            <p class="lead">Add elements to the LocalList</p>
+        </div>
+    </div>
+
+    <hr class="hr hr-blurry" />
+    <div class="content" style="text-align: center">
+
+        <div class="container py-2 h-100 px-1000">
+            <div class="form-group mb-2">
+                <div class="form-group mx-sm-3 mb-2">
+                    <form action="/locallist?id={{args.charger_id}}" method="POST">
+                        <div class="input-group mb-3 ">
+                            <div class="input-group-prepend">
+                                <label class="input-group-text" for="inputGroupSelect01">IdToken</label>
+                            </div>
+                            <input class="form-control" type="text" name="content" id="content" />
+
+                            <div class="input-group-prepend ps-3">
+                                <label class="input-group-text" for="inputGroupSelect01">Type</label>
+                            </div>
+                            <select class="custom-select" name="inputType" id="inputType">
+                                <option value="Central">Central</option>
+                                <option value="eMAID">eMAID</option>
+                                <option value="ISO14443">ISO14443</option>
+                                <option value="ISO15693">ISO15693</option>
+                                <option value="KeyCode">KeyCode</option>
+                                <option value="Local">Local</option>
+                                <option value="MacAddress">MacAddress</option>
+                                <option value="NoAuthorization">NoAuthorization</option>
+                            </select>
+                            <div class="input-group-prepend ps-3">
+                                <label class="input-group-text" for="inputGroupSelect01">Status</label>
+                            </div>
+                            <select class="custom-select" name="inputStatus" id="inputStatus">
+                                <option value="Accepted">Accepted</option>
+                                <option value="Blocked">Blocked</option>
+                                <option value="ConcurrentTx">ConcurrentTx</option>
+                                <option value="Expired">Expired</option>
+                                <option value="Invalid">Invalid</option>
+                            </select>
+
+
+                            <button class="btn btn-primary" type="submit">Add</button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
+        <hr class="hr hr-blurry" />
+
+        {% if locallist|length < 1 %} <h4 style="text-align: center">The LocalList is empty</h4>
+            {% else %}
+            <div class="container py-2 h-100">
+                <div class="table-responsive-md">
+                    <table class="table table-bordered">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th scope="col">idToken</th>
+                                <th scope="col">Type</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for element in locallist %}
+                            <tr>
+                                <td>{{ element.idToken.idToken|safe }}</td>
+                                <td>{{ element.idToken.type|safe }}</td>
+                                <td>{{ element.idTokenInfo.status|safe }}</td>
+                                <td><a href="/deletelocallist?id={{ args.charger_id }}&idtoken={{element.idToken.idToken}}"
+                                        class="btn btn-primary ml-auto">Delete</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {% endif %}
+    </div>
+
+</div>
+{% endblock %}

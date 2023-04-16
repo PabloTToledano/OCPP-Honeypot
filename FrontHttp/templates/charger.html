@@ -1,0 +1,50 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="container">
+
+  <div class="jumbotron jumbotron-fluid">
+    <div class="container">
+      <h1 class="display-4">Brand: {{ charger.name }}</h1>
+      <p class="lead">Model: {{ charger.model }}.</p>
+    </div>
+  </div>
+
+  <hr class="hr hr-blurry" />
+  <div class="row">
+    <div class="col-md-8 ">
+      <a href="/displaymessages?id={{ charger.id }}" class="btn btn-primary ml-auto">Display Messages</a>
+      <a href="/variables?id={{ charger.id }}" class="btn btn-primary ml-auto">Variables</a>
+      <a href="/locallist?id={{ charger.id }}" class="btn btn-primary ml-auto">Local List</a>
+      <a href="/startTransaction?id={{ charger.id }}" class="btn btn-primary ml-auto">Transactions</a>
+      <a href="/trigger?id={{ charger.id }}" class="btn btn-primary ml-auto">Trigger Message</a>
+      <a href="/update?id={{ charger.id }}" class="btn btn-primary ml-auto">Update Firmware</a>
+
+
+    </div>
+  </div>
+  <hr class="hr hr-blurry" />
+  <div class="row">
+    {% for item in items %}
+    <div class="col-md-3 mt-3">
+      <div class="card mb-2 box-shadow  text-white {{ item.color }}">
+        <div class="card-body center">
+          <h5 class="card-title">{{ item.name }}</h5>
+          <p class="card-text">{{ item.reverse_status }}</p>
+
+          {% for button in item.buttons %}
+          <a href="{{ button.url }}" class="btn btn-light btn-sm  mb-2">{{ button.button_text }}</a>
+          {% endfor %}
+
+
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+
+
+
+{% endblock %}

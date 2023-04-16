@@ -1,0 +1,60 @@
+{% extends "layout.html" %}
+
+{% block content %}
+</br>
+<div class="container">
+    <div class="jumbotron jumbotron-fluid">
+        <div class="container">
+            <h1 class="display-4">Variables</h1>
+            <p class="lead"></p>
+        </div>
+    </div>
+
+    <hr class="hr hr-blurry" />
+
+    <div class="content" style="text-align: center">
+
+        <!-- <div class="form">
+        <form action="/variables?id={{charger.id}}" method="POST">
+            <input type="text" name="content" id="content" />
+            <input class="btn btn-primary" type="submit" value="Add Display Message" />
+        </form>
+    </div> -->
+
+
+        {% if msgs|length < 1 %} <h4 style="text-align: center">There are no variables</h4>
+            {% else %}
+            <div class="container py-5 h-100">
+                <div class="table-responsive-md">
+                    <table class="table table-bordered">
+                        <thead class="thead-light">
+                            <tr>
+                                <th scope="col">Attribute Status</th>
+                                <th scope="col">Component</th>
+                                <th scope="col">Variable</th>
+                                <th scope="col">Value</th>
+                                <th scope="col">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for msg in msgs %}
+                            <tr>
+                                <td>{{ msg.attribute_status|safe }}</td>
+                                <td>{{ msg.component.name|safe }}</td>
+                                <td>{{ msg.variable.name|safe }}</td>
+                                <td>{{ msg.attribute_value|safe }}</td>
+                                <td> <a href="/updatevariable?id={{ charger.id }}&component={{ msg.component.name }}&variable={{msg.variable.name}}"
+                                        class="btn btn-secondary btn-sm active" role="button"
+                                        aria-pressed="true">Edit</a></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {% endif %}
+
+    </div>
+</div>
+{% endblock %}
