@@ -723,6 +723,7 @@ async def main():
     security_profile = 1
 
     if config.get("logstasth").get("ip") is not None:
+        logging.info("Using Logstash")
         instance = LoggerLogstash(
             logstash_port=config.get("logstasth").get("port"),
             logstash_host=config.get("logstasth").get("ip"),
