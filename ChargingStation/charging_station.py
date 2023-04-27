@@ -293,6 +293,7 @@ class ChargePoint(cp):
                 LOGGER.info(f"VirusTotal analysis: {analysis.stats}")
             except Exception as e:
                 # usually due to invalid virustotal api key
+                LOGGER.info(f"VirusTotal exception: {e}")
                 pass
 
         return call_result.DataTransferPayload(status="Accepted", data={})
