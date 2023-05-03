@@ -78,7 +78,7 @@
                                 <td>{{ element.idToken.type|safe }}</td>
                                 <td>{{ element.idTokenInfo.status|safe }}</td>
                                 <td><a href="/deletelocallist?id={{ args.charger_id }}&idtoken={{element.idToken.idToken}}"
-                                        class="btn btn-primary ml-auto">Delete</a>
+                                        class="btn btn-danger btn-sm ml-auto">Delete</a>
                                 </td>
                             </tr>
                             {% endfor %}
