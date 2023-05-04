@@ -265,6 +265,7 @@ async def create_websocket_server(csms: CentralSystem, config: dict):
     logging.info(f"Security profile {security_profile}")
 
     if logstash_host is not None:
+        logging.info("Using Logstash")
         instance = LoggerLogstash(
             logstash_port=logstash_port, logstash_host=logstash_host, logger_name="ocpp"
         )
