@@ -1,9 +1,9 @@
 {
     "CP": {
         "type": "CP",
-        "CSMS": "ws://csms1:9000/",
+        "CSMS": "ws://ocpp-honeypot_csms1_1:9000/",
         "VT_API_KEY": "",
-        "connectors": 3,
+        "connectors": 1,
         "model": "Pulsar Plus",
         "vendor_name": "Wallbox",
         "ssl_key": "/path/to/.key",
