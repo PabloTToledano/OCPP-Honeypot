@@ -9,7 +9,9 @@ RUN pip install -r /requirements.txt
 COPY ./instance /FrontHttp/instance
 COPY ./images /FrontHttp/images
 COPY ./templates /FrontHttp/templates
+COPY ./static /FrontHttp/static
 COPY ./app.py /FrontHttp/app.py
 COPY ./auth.py /FrontHttp/auth.py
 WORKDIR /FrontHttp
 CMD ["python","app.py"]
+# CMD ["uvicorn","app:app"]

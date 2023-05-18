@@ -3,3 +3,4 @@ requests
 flask-login
 flask-sqlalchemy
 flask_wtf
+uvicorn
