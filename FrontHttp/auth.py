@@ -42,7 +42,7 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for("chargers"))
     else:
-        return render_template("uma/login.html")
+        return render_template("login.html")
 
 
 @auth.route("/login", methods=["POST"])

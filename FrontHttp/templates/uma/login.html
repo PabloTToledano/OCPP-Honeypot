@@ -84,7 +84,13 @@
                                 <img id="question1" src="static/question-24px.png">
                             </a>
                             <!-- end specific UMA -->
-
+                            {% with messages = get_flashed_messages() %}
+                            {% if messages %}
+                            <div class="alert alert-danger" role="alert">
+                                {{ messages[0] }}
+                            </div>
+                            {% endif %}
+                            {% endwith %}
                             <!-- aqui mi form -->
                             <form nonce=""
                                 action="https://idp.uma.es/adas/SAML2/SSOService.php?SAMLRequest=fZFdT4MwFIb%2FCun9KCuyzGaQ4HbhkunIQC%2B8MQXOpAm02FNE%2F71sbDoTs%2Bu%2BH32fs0DR1C2PO1upHbx3gNb5bGqF%2FPgQks4orgVK5Eo0gNwWPI0fNpy5Hm%2BNtrrQNXFiRDBWarXUCrsGTArmQxbwtNuEpLK2RU5p3%2Fdu1wgXkKaVzHNdg61cRE0PiYwm2zQjzmr4glTiEPZrlWV7topS4MmQpttTj9tWLXHWq5C8Qj6bzfe5yEufBTdsz4KZL8rbwJ%2FvCwalP8gQO1grtELZkDCP%2BRMvmEzn2dTjLOABeyFOcpp2J1Up1dt1DvkoQn6fZclknPEMBo8TBgGJFgea%2FFhsLvhejxVnqCT6ByH%2BIFzQi%2FSxquWPQ9x6lehaFl9OXNe6XxoQFkIyJTQaLX%2FvHn0D%26RelayState=ss%3Adb%3Aefac48f62230f2a5446dc75252babbfce6913fe91d2a519acbffb25a87be8b86"

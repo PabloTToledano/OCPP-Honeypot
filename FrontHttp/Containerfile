@@ -14,4 +14,4 @@ COPY ./app.py /FrontHttp/app.py
 COPY ./auth.py /FrontHttp/auth.py
 WORKDIR /FrontHttp
 CMD ["python","app.py"]
-# CMD ["uvicorn","app:app"]
+# CMD ["uvicorn","app:app","--host=0.0.0.0"]
