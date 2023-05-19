@@ -7,11 +7,11 @@ body {
 }
 
 
-/* CUSTOMIZE THE NAVBAR
+/* CUSTOMIZE THE umaNAVBAR
 -------------------------------------------------- */
 
-/* Special class on .container surrounding .navbar, used for positioning it into place. */
-.navbar-wrapper {
+/* Special class on .container surrounding .umanavbar, used for positioning it into place. */
+.umanavbar-wrapper {
   position: absolute;
   top: 0;
   right: 0;
@@ -20,15 +20,17 @@ body {
 }
 
 /* Flip around the padding for proper display in narrow viewports */
-.navbar-wrapper > .container {
+.umanavbar-wrapper>.container {
   padding-right: 0;
   padding-left: 0;
 }
-.navbar-wrapper .navbar {
+
+.umanavbar-wrapper .umanavbar {
   padding-right: 15px;
   padding-left: 15px;
 }
-.navbar-wrapper .navbar .container {
+
+.umanavbar-wrapper .umanavbar .container {
   width: auto;
 }
 
@@ -41,6 +43,7 @@ body {
   margin-bottom: 0px;
   margin-top: 0px;
 }
+
 /* Since positioning the image, we need to help out the caption */
 .carousel-caption {
   z-index: 10;
@@ -62,9 +65,11 @@ body {
   margin-bottom: 20px;
   text-align: center;
 }
+
 .marketing h2 {
   font-weight: normal;
 }
+
 .marketing .col-lg-4 p {
   margin-right: 10px;
   margin-left: 10px;
@@ -75,7 +80,8 @@ body {
 ------------------------- */
 
 .featurette-divider {
-  margin: 80px 0; /* Space out the Bootstrap <hr> more */
+  margin: 80px 0;
+  /* Space out the Bootstrap <hr> more */
 }
 
 /* Thin out the marketing headings */
@@ -90,21 +96,24 @@ body {
 -------------------------------------------------- */
 
 @media (min-width: 768px) {
-  /* Navbar positioning foo */
-  .navbar-wrapper {
+
+  /* umaNavbar positioning foo */
+  .umanavbar-wrapper {
     margin-top: 20px;
   }
-  .navbar-wrapper .container {
+
+  .umanavbar-wrapper .container {
     padding-right: 15px;
     padding-left: 15px;
   }
-  .navbar-wrapper .navbar {
+
+  .umanavbar-wrapper .umanavbar {
     padding-right: 0;
     padding-left: 0;
   }
 
-  /* The navbar becomes detached from the top, so we round the corners */
-  .navbar-wrapper .navbar {
+  /* The umanavbar becomes detached from the top, so we round the corners */
+  .umanavbar-wrapper .umanavbar {
     border-radius: 4px;
   }
 
@@ -161,26 +170,30 @@ inspired from http://codepen.io/Rowno/pen/Afykb
 WHAT IS NEW IN 3.3: "Added transforms to improve carousel performance in modern browsers."
 now override the 3.3 new styles for modern browsers & apply opacity
 */
-@media all and (transform-3d), (-webkit-transform-3d) {
-    .carousel-fade .carousel-inner > .item.next,
-    .carousel-fade .carousel-inner > .item.active.right {
-      opacity: 0;
-      -webkit-transform: translate3d(0, 0, 0);
-              transform: translate3d(0, 0, 0);
-    }
-    .carousel-fade .carousel-inner > .item.prev,
-    .carousel-fade .carousel-inner > .item.active.left {
-      opacity: 0;
-      -webkit-transform: translate3d(0, 0, 0);
-              transform: translate3d(0, 0, 0);
-    }
-    .carousel-fade .carousel-inner > .item.next.left,
-    .carousel-fade .carousel-inner > .item.prev.right,
-    .carousel-fade .carousel-inner > .item.active {
-      opacity: 1;
-      -webkit-transform: translate3d(0, 0, 0);
-              transform: translate3d(0, 0, 0);
-    }
+@media all and (transform-3d),
+(-webkit-transform-3d) {
+
+  .carousel-fade .carousel-inner>.item.next,
+  .carousel-fade .carousel-inner>.item.active.right {
+    opacity: 0;
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+  }
+
+  .carousel-fade .carousel-inner>.item.prev,
+  .carousel-fade .carousel-inner>.item.active.left {
+    opacity: 0;
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+  }
+
+  .carousel-fade .carousel-inner>.item.next.left,
+  .carousel-fade .carousel-inner>.item.prev.right,
+  .carousel-fade .carousel-inner>.item.active {
+    opacity: 1;
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+  }
 }
 
 /* Multi item carousel */
@@ -189,87 +202,108 @@ now override the 3.3 new styles for modern browsers & apply opacity
   width: 2%;
   background-image: none;
 }
+
 .carousel-showfourmoveone .cloneditem-1,
 .carousel-showfourmoveone .cloneditem-2,
 .carousel-showfourmoveone .cloneditem-3 {
   display: none;
 }
+
 @media all and (min-width: 768px) {
-  .carousel-showfourmoveone .carousel-inner > .active.left,
-  .carousel-showfourmoveone .carousel-inner > .prev {
+
+  .carousel-showfourmoveone .carousel-inner>.active.left,
+  .carousel-showfourmoveone .carousel-inner>.prev {
     left: -50%;
   }
-  .carousel-showfourmoveone .carousel-inner > .active.right,
-  .carousel-showfourmoveone .carousel-inner > .next {
+
+  .carousel-showfourmoveone .carousel-inner>.active.right,
+  .carousel-showfourmoveone .carousel-inner>.next {
     left: 50%;
   }
-  .carousel-showfourmoveone .carousel-inner > .left,
-  .carousel-showfourmoveone .carousel-inner > .prev.right,
-  .carousel-showfourmoveone .carousel-inner > .active {
+
+  .carousel-showfourmoveone .carousel-inner>.left,
+  .carousel-showfourmoveone .carousel-inner>.prev.right,
+  .carousel-showfourmoveone .carousel-inner>.active {
     left: 0;
   }
+
   .carousel-showfourmoveone .carousel-inner .cloneditem-1 {
     display: block;
   }
 }
-@media all and (min-width: 768px) and (transform-3d), all and (min-width: 768px) and (-webkit-transform-3d) {
-  .carousel-showfourmoveone .carousel-inner > .item.active.right,
-  .carousel-showfourmoveone .carousel-inner > .item.next {
+
+@media all and (min-width: 768px) and (transform-3d),
+all and (min-width: 768px) and (-webkit-transform-3d) {
+
+  .carousel-showfourmoveone .carousel-inner>.item.active.right,
+  .carousel-showfourmoveone .carousel-inner>.item.next {
     -webkit-transform: translate3d(50%, 0, 0);
-            transform: translate3d(50%, 0, 0);
+    transform: translate3d(50%, 0, 0);
     left: 0;
   }
-  .carousel-showfourmoveone .carousel-inner > .item.active.left,
-  .carousel-showfourmoveone .carousel-inner > .item.prev {
+
+  .carousel-showfourmoveone .carousel-inner>.item.active.left,
+  .carousel-showfourmoveone .carousel-inner>.item.prev {
     -webkit-transform: translate3d(-50%, 0, 0);
-            transform: translate3d(-50%, 0, 0);
+    transform: translate3d(-50%, 0, 0);
     left: 0;
   }
-  .carousel-showfourmoveone .carousel-inner > .item.left,
-  .carousel-showfourmoveone .carousel-inner > .item.prev.right,
-  .carousel-showfourmoveone .carousel-inner > .item.active {
+
+  .carousel-showfourmoveone .carousel-inner>.item.left,
+  .carousel-showfourmoveone .carousel-inner>.item.prev.right,
+  .carousel-showfourmoveone .carousel-inner>.item.active {
     -webkit-transform: translate3d(0, 0, 0);
-            transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
     left: 0;
   }
 }
+
 @media all and (min-width: 992px) {
-  .carousel-showfourmoveone .carousel-inner > .active.left,
-  .carousel-showfourmoveone .carousel-inner > .prev {
+
+  .carousel-showfourmoveone .carousel-inner>.active.left,
+  .carousel-showfourmoveone .carousel-inner>.prev {
     left: -25%;
   }
-  .carousel-showfourmoveone .carousel-inner > .active.right,
-  .carousel-showfourmoveone .carousel-inner > .next {
+
+  .carousel-showfourmoveone .carousel-inner>.active.right,
+  .carousel-showfourmoveone .carousel-inner>.next {
     left: 25%;
   }
-  .carousel-showfourmoveone .carousel-inner > .left,
-  .carousel-showfourmoveone .carousel-inner > .prev.right,
-  .carousel-showfourmoveone .carousel-inner > .active {
+
+  .carousel-showfourmoveone .carousel-inner>.left,
+  .carousel-showfourmoveone .carousel-inner>.prev.right,
+  .carousel-showfourmoveone .carousel-inner>.active {
     left: 0;
   }
+
   .carousel-showfourmoveone .carousel-inner .cloneditem-2,
   .carousel-showfourmoveone .carousel-inner .cloneditem-3 {
     display: block;
   }
 }
-@media all and (min-width: 992px) and (transform-3d), all and (min-width: 992px) and (-webkit-transform-3d) {
-  .carousel-showfourmoveone .carousel-inner > .item.active.right,
-  .carousel-showfourmoveone .carousel-inner > .item.next {
+
+@media all and (min-width: 992px) and (transform-3d),
+all and (min-width: 992px) and (-webkit-transform-3d) {
+
+  .carousel-showfourmoveone .carousel-inner>.item.active.right,
+  .carousel-showfourmoveone .carousel-inner>.item.next {
     -webkit-transform: translate3d(25%, 0, 0);
-            transform: translate3d(25%, 0, 0);
+    transform: translate3d(25%, 0, 0);
     left: 0;
   }
-  .carousel-showfourmoveone .carousel-inner > .item.active.left,
-  .carousel-showfourmoveone .carousel-inner > .item.prev {
+
+  .carousel-showfourmoveone .carousel-inner>.item.active.left,
+  .carousel-showfourmoveone .carousel-inner>.item.prev {
     -webkit-transform: translate3d(-25%, 0, 0);
-            transform: translate3d(-25%, 0, 0);
+    transform: translate3d(-25%, 0, 0);
     left: 0;
   }
-  .carousel-showfourmoveone .carousel-inner > .item.left,
-  .carousel-showfourmoveone .carousel-inner > .item.prev.right,
-  .carousel-showfourmoveone .carousel-inner > .item.active {
+
+  .carousel-showfourmoveone .carousel-inner>.item.left,
+  .carousel-showfourmoveone .carousel-inner>.item.prev.right,
+  .carousel-showfourmoveone .carousel-inner>.item.active {
     -webkit-transform: translate3d(0, 0, 0);
-            transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
     left: 0;
   }
 }
