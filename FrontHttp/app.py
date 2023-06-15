@@ -497,7 +497,7 @@ def stop_transaction_post():
     response = requests.post(url, json=json)
     flash("StopTransaction sent")
     return render_template(
-        "authorize.html", charger=charger, current_user=current_user, start=start
+        "authorize.html", charger=charger, current_user=current_user, start=True
     )
 
 
